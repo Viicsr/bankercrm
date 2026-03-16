@@ -1,0 +1,23 @@
+# Entorno virtual
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Variables de entorno
+.env
+
+# macOS
+.DS_Store
+
+# IDEs
+.cursor/
+.vscode/
+
+# Alembic (solo versiones, no el env)
+# (alembic/ sí se sube, solo excluimos lo generado automáticamente)
+
