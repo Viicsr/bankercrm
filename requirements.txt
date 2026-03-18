@@ -5,3 +5,5 @@ asyncpg
 pydantic-settings
 python-dotenv
 alembic
+email-validator
+httpx
