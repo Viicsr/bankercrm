@@ -7,3 +7,6 @@ python-dotenv
 alembic
 email-validator
 httpx
+pytest
+pytest-asyncio
+aiosqlite 
