@@ -2,6 +2,7 @@ from datetime import datetime
 from sqlalchemy import String, DateTime, Boolean, func
 from sqlalchemy.orm import Mapped, mapped_column
 from app.core.database import Base
+from sqlalchemy.orm import relationship
 
 class Client(Base):
     __tablename__ = "clients"
@@ -15,4 +16,10 @@ class Client(Base):
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    accounts: Mapped[list["Account"]] = relationship(
+    "Account",
+    back_populates="client",
+    cascade="all, delete-orphan",
+    lazy="raise"
     )
