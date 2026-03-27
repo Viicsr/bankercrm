@@ -23,11 +23,6 @@ async def list_clients(
     only_active: bool = True,
     db: AsyncSession = Depends(get_db)
 ):
-    if size > 100:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Page size cannot exceed 100"
-        )
     service = ClientService(db)
     return await service.list_clients(page=page, size=size, only_active=only_active)
 
