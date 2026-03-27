@@ -16,7 +16,10 @@ async def create_account(
     try:
         return await service.create_account(client_id, account_data)
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        error_msg = str(e)
+        if "not found" in error_msg.lower() or "inactive" in error_msg.lower():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=error_msg)
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=error_msg)
 
 @router.get("/{account_id}", response_model=AccountResponse)
 async def get_account(account_id: int, db: AsyncSession = Depends(get_db)):

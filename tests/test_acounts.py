@@ -43,7 +43,7 @@ def test_create_account_duplicate_number(client, existing_client):
     payload = {"account_number": "ES003", "account_type": "checking", "balance": "0"}
     client.post("/api/v1/accounts", params={"client_id": existing_client["id"]}, json=payload)
     response = client.post("/api/v1/accounts", params={"client_id": existing_client["id"]}, json=payload)
-    assert response.status_code == 404  # ValueError del service
+    assert response.status_code == 409  # ValueError del service
 
 def test_create_account_nonexistent_client(client):
     response = client.post(
