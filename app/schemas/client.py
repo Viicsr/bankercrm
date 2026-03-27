@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, ConfigDict
 from datetime import datetime
+from app.schemas.account import AccountResponse 
 
 class ClientCreate(BaseModel):
     name: str
@@ -18,3 +19,6 @@ class ClientResponse(BaseModel):
     email: str
     is_active: bool
     created_at: datetime
+
+class ClientWithAccountsResponse(ClientResponse):
+    accounts: list[AccountResponse] = []

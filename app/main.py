@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from app.core.config import settings
 from app.core.database import engine
 from app.api.v1.routers import clients
+from app.api.v1.routers import clients, accounts
 
 # Contexto de vida de la aplicación
 @asynccontextmanager
@@ -32,3 +33,4 @@ async def health_check():
 
 # Incluye el router de clientes en la aplicación
 app.include_router(clients.router, prefix="/api/v1")
+app.include_router(accounts.router, prefix="/api/v1")
