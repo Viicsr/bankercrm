@@ -3,17 +3,16 @@ from sqlalchemy import select
 from app.models.account import Account
 from app.models.client import Client
 from app.schemas.account import AccountCreate
+from app.services.client_service import ClientService
 
 class AccountService:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession, client_service: ClientService):
         self.db = db
+        self.client_service = client_service
 
     async def _get_client_or_raise(self, client_id: int) -> Client: # funcion auxiliar para obtener el cliente o lanzar un error si no existe
-        result = await self.db.execute(
-            select(Client).where(Client.id == client_id, Client.is_active == True)
-        )
-        client = result.scalar_one_or_none()
-        if not client:
+        client = await self.client_service.get_client(client_id) # Delegado en client service
+        if not client or not client.is_active:
             raise ValueError(f"Client {client_id} not found or inactive")
         return client
 

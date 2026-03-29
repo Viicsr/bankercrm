@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.schemas.account import AccountCreate, AccountResponse
 from app.services.account_service import AccountService
+from app.services.client_service import ClientService
 
 router = APIRouter(prefix="/accounts", tags=["Accounts"])
 
@@ -12,7 +13,7 @@ async def create_account(
     account_data: AccountCreate,
     db: AsyncSession = Depends(get_db)
 ):
-    service = AccountService(db)
+    service = AccountService(db=db,client_service=ClientService(db=db))
     try:
         return await service.create_account(client_id, account_data)
     except ValueError as e:
@@ -23,7 +24,7 @@ async def create_account(
 
 @router.get("/{account_id}", response_model=AccountResponse)
 async def get_account(account_id: int, db: AsyncSession = Depends(get_db)):
-    service = AccountService(db)
+    service = AccountService(db=db,client_service=ClientService(db=db))
     account = await service.get_account(account_id)
     if not account:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
