@@ -4,6 +4,7 @@ from app.models.client import Client
 from app.schemas.client import ClientCreate, ClientResponse, ClientUpdate
 from app.schemas.common import PaginatedResponse
 from sqlalchemy.orm import selectinload
+from app.core.exceptions import NotFoundError, AlreadyExistsError
 
 class ClientService:
     def __init__(self, db: AsyncSession):
@@ -14,7 +15,7 @@ class ClientService:
             select(Client).where(Client.email == data.email)
         )
         if existing.scalar_one_or_none():
-            raise ValueError(f"Email {data.email} already registered")
+            raise AlreadyExistsError(entity="Client", field="email",value=data.email)
 
         client = Client(name=data.name, email=data.email)
         self.db.add(client)

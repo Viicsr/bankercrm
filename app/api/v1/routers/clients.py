@@ -5,6 +5,7 @@ from app.schemas.client import ClientCreate, ClientResponse, ClientWithAccountsR
 from app.services.client_service import ClientService
 from app.schemas.common import PaginatedResponse
 from typing import Annotated
+from app.core.exceptions import NotFoundError, AlreadyExistsError
 
 router = APIRouter(prefix="/clients", tags=["Clients"])
 
@@ -13,7 +14,7 @@ async def create_client(client_data: ClientCreate, db: AsyncSession = Depends(ge
     service = ClientService(db)
     try:
         return await service.create_client(client_data)
-    except ValueError as e:
+    except AlreadyExistsError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
 @router.get("/", response_model=PaginatedResponse[ClientResponse])

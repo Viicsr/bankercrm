@@ -4,6 +4,7 @@ from app.models.account import Account
 from app.models.client import Client
 from app.schemas.account import AccountCreate
 from app.services.client_service import ClientService
+from app.core.exceptions import NotFoundError, AlreadyExistsError
 
 class AccountService:
     def __init__(self, db: AsyncSession, client_service: ClientService):
@@ -13,7 +14,7 @@ class AccountService:
     async def _get_client_or_raise(self, client_id: int) -> Client: # funcion auxiliar para obtener el cliente o lanzar un error si no existe
         client = await self.client_service.get_client(client_id) # Delegado en client service
         if not client or not client.is_active:
-            raise ValueError(f"Client {client_id} not found or inactive")
+            raise NotFoundError(entity="client", entity_id=client_id)
         return client
 
     async def create_account(self, client_id: int, data: AccountCreate) -> Account: # funcion para crear una cuenta
@@ -23,7 +24,7 @@ class AccountService:
             select(Account).where(Account.account_number == data.account_number)
         )
         if existing.scalar_one_or_none(): # si la cuenta ya existe, lanzar un error
-            raise ValueError(f"Account number {data.account_number} already exists")
+            raise AlreadyExistsError(entity="Account", field="account number", value=data.account_number)
 
         account = Account( # crear la cuenta
             client_id=client_id,

@@ -4,6 +4,7 @@ from app.core.database import get_db
 from app.schemas.account import AccountCreate, AccountResponse
 from app.services.account_service import AccountService
 from app.services.client_service import ClientService
+from app.core.exceptions import NotFoundError, AlreadyExistsError
 
 router = APIRouter(prefix="/accounts", tags=["Accounts"])
 
@@ -16,11 +17,10 @@ async def create_account(
     service = AccountService(db=db,client_service=ClientService(db=db))
     try:
         return await service.create_account(client_id, account_data)
-    except ValueError as e:
-        error_msg = str(e)
-        if "not found" in error_msg.lower() or "inactive" in error_msg.lower():
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=error_msg)
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=error_msg)
+    except NotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except AlreadyExistsError as e:
+        raise HTTPException(status_code=409, detail=str(e))
 
 @router.get("/{account_id}", response_model=AccountResponse)
 async def get_account(account_id: int, db: AsyncSession = Depends(get_db)):
