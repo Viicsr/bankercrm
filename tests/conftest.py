@@ -35,3 +35,16 @@ def client():
         yield c
 
     app.dependency_overrides.clear()
+
+@pytest.fixture
+def admin_headers(client) -> dict:
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": "testadmin@test.com", "password": "Admin1234!", "role": "admin"},
+    )
+    login = client.post(
+        "/api/v1/auth/login",
+        data={"username": "testadmin@test.com", "password": "Admin1234!"},
+    )
+    token = login.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}

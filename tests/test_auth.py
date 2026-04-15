@@ -1,0 +1,168 @@
+import pytest
+
+# Helper reutilizable para obtener headers de auth
+def get_auth_headers(client, email: str, password: str) -> dict:
+    response = client.post(
+        "/api/v1/auth/login",
+        data={"username": email, "password": password},  # OAuth2PasswordRequestForm usa form data
+    )
+    assert response.status_code == 200
+    token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def admin_user(client):
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": "admin@test.com", "password": "Admin1234!", "role": "admin"},
+    )
+    return {"email": "admin@test.com", "password": "Admin1234!"}
+
+
+@pytest.fixture
+def analyst_user(client):
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": "analyst@test.com", "password": "Analyst1234!", "role": "analyst"},
+    )
+    return {"email": "analyst@test.com", "password": "Analyst1234!"}
+
+
+@pytest.fixture
+def readonly_user(client):
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": "readonly@test.com", "password": "Read1234!", "role": "read_only"},
+    )
+    return {"email": "readonly@test.com", "password": "Read1234!"}
+
+
+def test_register_user(client):
+    response = client.post(
+        "/api/v1/auth/register",
+        json={"email": "new@test.com", "password": "Pass1234!"},
+    )
+    assert response.status_code == 201
+    assert response.json()["email"] == "new@test.com"
+    assert response.json()["role"] == "read_only"  # rol por defecto
+    assert "hashed_password" not in response.json()  # NUNCA exponer el hash
+
+
+def test_register_duplicate_email(client, admin_user):
+    response = client.post(
+        "/api/v1/auth/register",
+        json={"email": admin_user["email"], "password": "OtroPass1!"},
+    )
+    assert response.status_code == 409
+
+
+def test_login_success(client, admin_user):
+    response = client.post(
+        "/api/v1/auth/login",
+        data={"username": admin_user["email"], "password": admin_user["password"]},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "access_token" in data
+    assert "refresh_token" in data
+    assert data["token_type"] == "bearer"
+
+
+def test_login_wrong_password(client, admin_user):
+    response = client.post(
+        "/api/v1/auth/login",
+        data={"username": admin_user["email"], "password": "wrongpassword"},
+    )
+    assert response.status_code == 401
+    # Verifica que el mensaje NO revela si el email existe
+    assert "email or password" in response.json()["detail"].lower()
+
+
+def test_login_nonexistent_email(client):
+    response = client.post(
+        "/api/v1/auth/login",
+        data={"username": "noexiste@test.com", "password": "cualquiera"},
+    )
+    assert response.status_code == 401
+    # El mensaje debe ser IDÉNTICO al de contraseña incorrecta
+    assert "email or password" in response.json()["detail"].lower()
+
+
+def test_protected_endpoint_without_token(client):
+    response = client.post(
+        "/api/v1/clients",
+        json={"name": "Test", "email": "t@test.com"},
+    )
+    assert response.status_code == 401
+
+
+def test_protected_endpoint_with_invalid_token(client):
+    response = client.post(
+        "/api/v1/clients",
+        json={"name": "Test", "email": "t@test.com"},
+        headers={"Authorization": "Bearer token_inventado_invalido"},
+    )
+    assert response.status_code == 401
+
+
+def test_admin_can_create_client(client, admin_user):
+    headers = get_auth_headers(client, admin_user["email"], admin_user["password"])
+    response = client.post(
+        "/api/v1/clients",
+        json={"name": "Admin Client", "email": "adminclient@bank.com"},
+        headers=headers,
+    )
+    assert response.status_code == 201
+
+
+def test_readonly_cannot_create_client(client, readonly_user):
+    headers = get_auth_headers(client, readonly_user["email"], readonly_user["password"])
+    response = client.post(
+        "/api/v1/clients",
+        json={"name": "Readonly Client", "email": "ro@bank.com"},
+        headers=headers,
+    )
+    assert response.status_code == 403
+
+
+def test_readonly_can_read_clients(client, admin_user, readonly_user):
+    # Admin crea el cliente
+    admin_headers = get_auth_headers(client, admin_user["email"], admin_user["password"])
+    client.post(
+        "/api/v1/clients",
+        json={"name": "Visible Client", "email": "visible@bank.com"},
+        headers=admin_headers,
+    )
+    # Read-only puede leerlo
+    ro_headers = get_auth_headers(client, readonly_user["email"], readonly_user["password"])
+    response = client.get("/api/v1/clients", headers=ro_headers)
+    assert response.status_code == 200
+
+
+def test_refresh_token(client, admin_user):
+    login = client.post(
+        "/api/v1/auth/login",
+        data={"username": admin_user["email"], "password": admin_user["password"]},
+    )
+    refresh_token = login.json()["refresh_token"]
+    response = client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": refresh_token},
+    )
+    assert response.status_code == 200
+    assert "access_token" in response.json()
+
+
+def test_refresh_with_access_token_fails(client, admin_user):
+    login = client.post(
+        "/api/v1/auth/login",
+        data={"username": admin_user["email"], "password": admin_user["password"]},
+    )
+    access_token = login.json()["access_token"]
+    # El access token NO debe funcionar como refresh token
+    response = client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": access_token},
+    )
+    assert response.status_code == 401
