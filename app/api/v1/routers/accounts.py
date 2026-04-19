@@ -4,7 +4,6 @@ from app.core.database import get_db
 from app.schemas.account import AccountCreate, AccountResponse
 from app.services.account_service import AccountService
 from app.services.client_service import ClientService
-from app.core.exceptions import NotFoundError, AlreadyExistsError
 from app.api.v1.deps import get_current_user, require_roles
 from app.models.user import User, UserRole
 
@@ -18,12 +17,8 @@ async def create_account(
     current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.ANALYST))
 ):
     service = AccountService(db=db,client_service=ClientService(db=db))
-    try:
-        return await service.create_account(client_id, account_data)
-    except NotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except AlreadyExistsError as e:
-        raise HTTPException(status_code=409, detail=str(e))
+    return await service.create_account(client_id, account_data)
+
 
 @router.get("/{account_id}", response_model=AccountResponse)
 async def get_account(account_id: int, 

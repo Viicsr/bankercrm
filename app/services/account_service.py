@@ -4,7 +4,7 @@ from app.models.account import Account
 from app.models.client import Client
 from app.schemas.account import AccountCreate
 from app.services.client_service import ClientService
-from app.core.exceptions import NotFoundError, AlreadyExistsError
+from app.core.exceptions import NotFoundError, ConflictError
 
 class AccountService:
     def __init__(self, db: AsyncSession, client_service: ClientService):
@@ -24,7 +24,7 @@ class AccountService:
             select(Account).where(Account.account_number == data.account_number)
         )
         if existing.scalar_one_or_none(): # si la cuenta ya existe, lanzar un error
-            raise AlreadyExistsError(entity="Account", field="account number", value=data.account_number)
+            raise ConflictError(f"Account number {data.account_number} already exists")
 
         account = Account( # crear la cuenta
             client_id=client_id,

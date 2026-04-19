@@ -5,7 +5,6 @@ from app.core.database import get_db
 from app.core.security import create_access_token, create_refresh_token, decode_token
 from app.schemas.auth import UserRegister, UserResponse, TokenResponse, RefreshRequest
 from app.services.user_service import UserService
-from app.core.exceptions import AlreadyExistsError
 import jwt
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -14,12 +13,7 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(data: UserRegister, db: AsyncSession = Depends(get_db)):
     service = UserService(db)
-    try:
-        user = await service.create_user(data)
-        return user
-    except AlreadyExistsError as e:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
-
+    return await service.create_user(data)
 
 @router.post("/login", response_model=TokenResponse)
 async def login(

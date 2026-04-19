@@ -4,7 +4,7 @@ from app.models.client import Client
 from app.schemas.client import ClientCreate, ClientResponse, ClientUpdate
 from app.schemas.common import PaginatedResponse
 from sqlalchemy.orm import selectinload
-from app.core.exceptions import NotFoundError, AlreadyExistsError
+from app.core.exceptions import NotFoundError, ConflictError
 
 class ClientService:
     def __init__(self, db: AsyncSession):
@@ -15,7 +15,7 @@ class ClientService:
             select(Client).where(Client.email == data.email)
         )
         if existing.scalar_one_or_none():
-            raise AlreadyExistsError(entity="Client", field="email",value=data.email)
+            raise ConflictError(f"Email {data.email} already registered")
 
         client = Client(name=data.name, email=data.email)
         self.db.add(client)
@@ -23,12 +23,15 @@ class ClientService:
         await self.db.refresh(client)
         return client
 
-    async def get_client(self, client_id: int) -> Client | None:
+    async def get_client(self, client_id: int) -> Client:
         result = await self.db.execute(
             select(Client).where(Client.id == client_id)
         )
-        return result.scalar_one_or_none()
-    
+        client = result.scalar_one_or_none()
+        if not client:
+            raise NotFoundError("Client", client_id) 
+        return client
+
     async def list_clients(self, page: int = 1, size: int = 20, only_active: bool = True) -> PaginatedResponse[ClientResponse]:
         offset = (page - 1) * size
         query = select(Client)
@@ -54,18 +57,19 @@ class ClientService:
             size=size
         )
 
-    async def get_client_with_accounts(self, client_id: int) -> Client | None:
+    async def get_client_with_accounts(self, client_id: int) -> Client:
         result = await self.db.execute(
             select(Client)
             .options(selectinload(Client.accounts))
             .where(Client.id == client_id)
         )
-        return result.scalar_one_or_none()
-
-    async def update_client(self, client_id: int, data: ClientUpdate) -> Client | None:
-        client = await self.get_client(client_id)
+        client = result.scalar_one_or_none()
         if not client:
-            return None
+            raise NotFoundError("Client", client_id)
+        return client
+
+    async def update_client(self, client_id: int, data: ClientUpdate) -> Client: 
+        client = await self.get_client(client_id)
         update_data = data.model_dump(exclude_unset=True)
         for field, value in update_data.items():
             setattr(client, field, value)

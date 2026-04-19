@@ -1,11 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.schemas.client import ClientCreate, ClientResponse, ClientWithAccountsResponse, ClientUpdate
 from app.services.client_service import ClientService
 from app.schemas.common import PaginatedResponse
 from typing import Annotated
-from app.core.exceptions import NotFoundError, AlreadyExistsError
 from app.api.v1.deps import get_current_user, require_roles
 from app.models.user import User, UserRole
 
@@ -18,11 +17,7 @@ async def create_client(
     current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.ANALYST))
     ):
     service = ClientService(db)
-
-    try:
-        return await service.create_client(client_data)
-    except AlreadyExistsError as e:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    return await service.create_client(client_data)
 
 @router.get("/", response_model=PaginatedResponse[ClientResponse])
 async def list_clients(
@@ -35,7 +30,6 @@ async def list_clients(
     service = ClientService(db)
     return await service.list_clients(page=page, size=size, only_active=only_active)
 
-
 @router.get("/{client_id}/accounts", response_model=ClientWithAccountsResponse)
 async def get_client_with_accounts(
     client_id: int,
@@ -43,13 +37,7 @@ async def get_client_with_accounts(
     current_user: User = Depends(get_current_user)
 ):
     service = ClientService(db)
-    client = await service.get_client_with_accounts(client_id)
-    if not client:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Client not found"
-        )
-    return client
+    return await service.get_client_with_accounts(client_id) 
 
 @router.get("/{client_id}", response_model=ClientResponse)
 async def get_client(
@@ -58,10 +46,7 @@ async def get_client(
     current_user: User = Depends(get_current_user),
     ):
     service = ClientService(db)
-    client = await service.get_client(client_id)
-    if not client:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
-    return client
+    return await service.get_client(client_id) 
 
 @router.patch("/{client_id}", response_model=ClientResponse)
 async def update_client(
@@ -71,7 +56,4 @@ async def update_client(
     current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.ANALYST)),
 ):
     service = ClientService(db)
-    client = await service.update_client(client_id, update_data)
-    if not client:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
-    return client
+    return await service.update_client(client_id, update_data) 

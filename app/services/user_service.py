@@ -1,10 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.models.user import User, UserRole
+from app.models.user import User
 from app.schemas.auth import UserRegister
 from app.core.security import hash_password, verify_password
-from app.core.exceptions import AlreadyExistsError
-
+from app.core.exceptions import ConflictError
 class UserService:
     def __init__(self, db: AsyncSession):
         self.db = db
@@ -21,7 +20,7 @@ class UserService:
 
     async def create_user(self, data: UserRegister) -> User:
         if await self.get_by_email(data.email):
-            raise AlreadyExistsError(entity="User", field="email",value=data.email)
+            raise ConflictError(f"Email {data.email} already registered")
         user = User(
             email=data.email,
             hashed_password=hash_password(data.password),

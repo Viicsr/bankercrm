@@ -7,6 +7,9 @@ from app.core.config import settings
 from app.core.database import engine,get_db
 from app.api.v1.routers import clients, accounts, auth
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi.exceptions import RequestValidationError
+from app.core.exceptions import AppBaseException
+from app.core.error_handlers import (app_exception_handler, validation_exception_handler, unhandled_exception_handler)
 
 logger = logging.getLogger(__name__)
 
@@ -60,3 +63,8 @@ async def health_check(db: AsyncSession = Depends(get_db)):
 app.include_router(clients.router, prefix="/api/v1")
 app.include_router(accounts.router, prefix="/api/v1")
 app.include_router(auth.router, prefix="/api/v1")
+
+# Agrega los manejadores de excepciones
+app.add_exception_handler(AppBaseException, app_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(Exception, unhandled_exception_handler)
