@@ -47,7 +47,6 @@ async def validation_exception_handler(
 
 
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    # Nunca expones el traceback al cliente — lo logas internamente
     logger.error(
         "Unhandled exception",
         exc_info=exc,

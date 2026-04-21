@@ -10,8 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.exceptions import RequestValidationError
 from app.core.exceptions import AppBaseException
 from app.core.error_handlers import (app_exception_handler, validation_exception_handler, unhandled_exception_handler)
+from app.core.logging_config import setup_logging
+# Antes de crear la instancia de FastAPI
+setup_logging()
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)        # logging.getLogger(__name__) i
 
 # Contexto de vida de la aplicación
 @asynccontextmanager

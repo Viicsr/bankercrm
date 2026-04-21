@@ -5,6 +5,9 @@ from app.models.client import Client
 from app.schemas.account import AccountCreate
 from app.services.client_service import ClientService
 from app.core.exceptions import NotFoundError, ConflictError
+import logging
+
+logger = logging.getLogger(__name__)
 
 class AccountService:
     def __init__(self, db: AsyncSession, client_service: ClientService):
@@ -18,7 +21,7 @@ class AccountService:
         return client
 
     async def create_account(self, client_id: int, data: AccountCreate) -> Account: # funcion para crear una cuenta
-        await self._get_client_or_raise(client_id)
+        await self.client_service.get_client(client_id) 
 
         existing = await self.db.execute( # verificar si la cuenta ya existe
             select(Account).where(Account.account_number == data.account_number)
@@ -37,14 +40,21 @@ class AccountService:
         await self.db.refresh(account)
         return account
 
-    async def get_account(self, account_id: int) -> Account | None: # funcion para obtener una cuenta
+    async def get_account(self, account_id: int) -> Account:
+        logger.info("Getting account", extra={"account_id": account_id})
         result = await self.db.execute(
             select(Account).where(Account.id == account_id)
         )
-        return result.scalar_one_or_none()
+        account = result.scalar_one_or_none()
+        if not account:
+            raise NotFoundError("Account", account_id)
+        return account
 
     async def get_accounts_by_client(self, client_id: int) -> list[Account]: # funcion para obtener todas las cuentas de un cliente
+        logger.info("Getting accounts by client", extra={"client_id": client_id})
         result = await self.db.execute(
             select(Account).where(Account.client_id == client_id)
         )
-        return list(result.scalars().all())
+        accounts = list(result.scalars().all()) 
+        logger.info("Accounts found", extra={"client_id": client_id, "count": len(accounts)})
+        return accounts
