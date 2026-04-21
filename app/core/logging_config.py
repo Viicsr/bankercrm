@@ -4,6 +4,7 @@ import json
 import sys
 from datetime import datetime, timezone
 from app.core.config import settings
+from asgi_correlation_id.context import correlation_id
 
 
 class JSONFormatter(logging.Formatter):
@@ -17,6 +18,8 @@ class JSONFormatter(logging.Formatter):
             "message": record.getMessage(),
             "service": settings.APP_NAME,
             "environment": settings.APP_ENV,
+            "request_id": correlation_id.get() or "-",
+
         }
 
         # Añade campos extra si los hay (pasados con extra={} en el logger)

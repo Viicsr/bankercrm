@@ -11,6 +11,11 @@ from fastapi.exceptions import RequestValidationError
 from app.core.exceptions import AppBaseException
 from app.core.error_handlers import (app_exception_handler, validation_exception_handler, unhandled_exception_handler)
 from app.core.logging_config import setup_logging
+from asgi_correlation_id import CorrelationIdMiddleware
+from app.middleware.request_id import RequestLoggingMiddleware
+import re
+import uuid 
+
 # Antes de crear la instancia de FastAPI
 setup_logging()
 
@@ -71,3 +76,18 @@ app.include_router(auth.router, prefix="/api/v1")
 app.add_exception_handler(AppBaseException, app_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(Exception, unhandled_exception_handler)
+
+UUID4_REGEX = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+    re.IGNORECASE,
+)
+# Orden de registro: se ejecutan en orden inverso al registro
+# (el último registrado es el primero en ejecutarse)
+app.add_middleware(RequestLoggingMiddleware)
+app.add_middleware(
+    CorrelationIdMiddleware,
+    header_name="X-Request-ID",
+    generator=lambda: uuid.uuid4().hex,   # genera UUID4 si el cliente no manda uno
+    validator=UUID4_REGEX.match,          # rechaza IDs que no sean UUID4 válidos
+    transformer=lambda a: a,              # devuelve el ID tal cual
+)
