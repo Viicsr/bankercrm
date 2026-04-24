@@ -1,0 +1,20 @@
+info:
+  name: Create Client
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{base_url}}/clients"
+  body:
+    type: json
+    data: '{"name": "Victor", "email": "victor@test.com"}'
+  auth:
+    type: bearer
+    token: "{{jwt_token}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

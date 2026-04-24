@@ -1,0 +1,21 @@
+info:
+  name: clients
+  type: folder
+  seq: 4
+
+request:
+  auth:
+    type: bearer
+    token: |-
+      AWS Sig v4
+      Basic Auth
+      Bearer Token
+      ✓
+      Digest Auth
+      NTLM Auth
+      OAuth 1.0
+      OAuth 2.0
+      WSSE Auth
+      API Key
+      Inherit
+      {{jwt_token}}

@@ -1,0 +1,13 @@
+# Secrets
+.env*
+
+# Dependencies
+node_modules
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Entornos locales con variables sensibles
+environments/local.yml
+environments/*.secrets.yml
