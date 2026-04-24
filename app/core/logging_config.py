@@ -65,5 +65,9 @@ def setup_logging() -> None:
     logging.getLogger("sqlalchemy.engine").setLevel(
         logging.INFO if settings.APP_ENV == "development" else logging.WARNING
     )
+    logging.getLogger("sqlalchemy.engine").propagate = False
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
     logging.getLogger("uvicorn.error").setLevel(logging.INFO)
+    logging.getLogger("python_multipart").setLevel(logging.WARNING)
+    logging.getLogger("passlib").setLevel(logging.WARNING)
+    

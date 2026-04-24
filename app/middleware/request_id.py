@@ -31,6 +31,5 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             },
         )
 
-        response.headers["X-Request-ID"] = request_id or ""
         response.headers["X-Process-Time"] = f"{duration_ms:.2f}ms"
         return response

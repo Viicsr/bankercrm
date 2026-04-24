@@ -4,7 +4,7 @@ from app.core.config import settings # configuración de la aplicación
 
 engine = create_async_engine(
     settings.DATABASE_URL, # URL de la base de datos
-    echo=settings.APP_ENV == "development", # muestra las consultas SQL en la consola
+    echo=False, # muestra las consultas SQL en la consola
     pool_size=5, # tamaño del pool de conexiones
     max_overflow=10, # número máximo de conexiones que se pueden crear
     pool_pre_ping=True  # detecta conexiones muertas antes de usarlas
