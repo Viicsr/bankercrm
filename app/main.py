@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-import logging, asyncio
+import logging, asyncio, uuid, re
 from fastapi import FastAPI, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
@@ -13,8 +13,8 @@ from app.core.error_handlers import (app_exception_handler, validation_exception
 from app.core.logging_config import setup_logging
 from asgi_correlation_id import CorrelationIdMiddleware
 from app.middleware.request_id import RequestLoggingMiddleware
-import re
-import uuid 
+from fastapi.middleware.cors import CORSMiddleware
+from app.middleware.security import SecurityHeadersMiddleware
 
 # Antes de crear la instancia de FastAPI
 setup_logging()
@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)        # logging.getLogger(__name__) i
 # Contexto de vida de la aplicación
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    app.state.settings = settings
     logger.info(f"Starting app | ENV: {settings.APP_ENV}")
     yield
     await engine.dispose()
@@ -83,6 +84,7 @@ UUID4_REGEX = re.compile(
 )
 # Orden de registro: se ejecutan en orden inverso al registro
 # (el último registrado es el primero en ejecutarse)
+app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(
     CorrelationIdMiddleware,
@@ -90,4 +92,12 @@ app.add_middleware(
     generator=lambda: uuid.uuid4().hex,   # genera UUID4 si el cliente no manda uno
     validator=UUID4_REGEX.match,          # rechaza IDs que no sean UUID4 válidos
     transformer=lambda a: a,              # devuelve el ID tal cual
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PATCH", "DELETE"],
+    allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
 )
