@@ -3,7 +3,7 @@ from sqlalchemy import select
 from app.models.user import User
 from app.schemas.auth import UserRegister
 from app.core.security import hash_password, verify_password
-from app.core.exceptions import ConflictError
+from app.core.exceptions import ConflictError, UnauthorizedError
 import logging
 
 logger = logging.getLogger(__name__)
@@ -43,8 +43,6 @@ class UserService:
         logger.info("Authentication attempt")
         user = await self.get_by_email(email)
         # Mensaje idéntico para ambos casos — no filtra información
-        if not user or not verify_password(password, user.hashed_password):
-            return None
-        if not user.is_active:
-            return None
+        if not user or not verify_password(password, user.hashed_password) or not user.is_active:
+            raise UnauthorizedError("Invalid email or password")
         return user

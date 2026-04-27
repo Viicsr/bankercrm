@@ -3,6 +3,7 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from app.core.exceptions import AppBaseException
+from asgi_correlation_id.context import correlation_id
 
 logger = logging.getLogger(__name__)
 
@@ -58,5 +59,17 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
             "error": "InternalServerError",
             "detail": "An unexpected error occurred",
             "path": request.url.path,
+        },
+    )
+
+
+async def app_exception_handler(request: Request, exc: AppBaseException) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "error": exc.__class__.__name__,
+            "detail": exc.detail,
+            "path": request.url.path,
+            "request_id": correlation_id.get() or None,
         },
     )
