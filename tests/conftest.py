@@ -48,3 +48,30 @@ def admin_headers(client) -> dict:
     )
     token = login.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
+
+@pytest.fixture
+def readonly_user(client):
+    """Crea un usuario con rol read_only para tests de permisos."""
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": "readonly_403@test.com", "password": "Read1234!", "role": "read_only"},
+    )
+    return {"email": "readonly_403@test.com", "password": "Read1234!"}
+
+
+@pytest.fixture
+def admin_user(client): 
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": "admin@test.com", "password": "Admin1234!", "role": "admin"},
+    )
+    return {"email": "admin@test.com", "password": "Admin1234!"}
+
+
+@pytest.fixture
+def analyst_user(client):
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": "analyst@test.com", "password": "Analyst1234!", "role": "analyst"},
+    )
+    return {"email": "analyst@test.com", "password": "Analyst1234!"}

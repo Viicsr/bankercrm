@@ -11,33 +11,6 @@ def get_auth_headers(client, email: str, password: str) -> dict:
     return {"Authorization": f"Bearer {token}"}
 
 
-@pytest.fixture
-def admin_user(client):
-    client.post(
-        "/api/v1/auth/register",
-        json={"email": "admin@test.com", "password": "Admin1234!", "role": "admin"},
-    )
-    return {"email": "admin@test.com", "password": "Admin1234!"}
-
-
-@pytest.fixture
-def analyst_user(client):
-    client.post(
-        "/api/v1/auth/register",
-        json={"email": "analyst@test.com", "password": "Analyst1234!", "role": "analyst"},
-    )
-    return {"email": "analyst@test.com", "password": "Analyst1234!"}
-
-
-@pytest.fixture
-def readonly_user(client):
-    client.post(
-        "/api/v1/auth/register",
-        json={"email": "readonly@test.com", "password": "Read1234!", "role": "read_only"},
-    )
-    return {"email": "readonly@test.com", "password": "Read1234!"}
-
-
 def test_register_user(client):
     response = client.post(
         "/api/v1/auth/register",
