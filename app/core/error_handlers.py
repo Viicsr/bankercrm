@@ -18,13 +18,19 @@ async def app_exception_handler(request: Request, exc: AppBaseException) -> JSON
             "method": request.method,
         },
     )
+    headers = {}
+    if exc.status_code == 401:
+        headers["WWW-Authenticate"] = "Bearer"
+
     return JSONResponse(
         status_code=exc.status_code,
         content={
             "error": exc.__class__.__name__,
             "detail": exc.detail,
             "path": request.url.path,
+            "request_id": correlation_id.get() or None,
         },
+        headers=headers or None,
     )
 
 
@@ -59,17 +65,5 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
             "error": "InternalServerError",
             "detail": "An unexpected error occurred",
             "path": request.url.path,
-        },
-    )
-
-
-async def app_exception_handler(request: Request, exc: AppBaseException) -> JSONResponse:
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={
-            "error": exc.__class__.__name__,
-            "detail": exc.detail,
-            "path": request.url.path,
-            "request_id": correlation_id.get() or None,
         },
     )
