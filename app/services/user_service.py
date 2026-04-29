@@ -1,10 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models.user import User
-from app.schemas.auth import UserRegister
-from app.core.security import hash_password, verify_password
+from app.schemas.auth import UserRegister, TokenResponse
+from app.core.security import hash_password, verify_password, create_access_token, create_refresh_token, decode_token
 from app.core.exceptions import ConflictError, UnauthorizedError
-import logging
+import logging, jwt
 
 logger = logging.getLogger(__name__)
 
@@ -46,3 +46,23 @@ class UserService:
         if not user or not verify_password(password, user.hashed_password) or not user.is_active:
             raise UnauthorizedError("Invalid email or password")
         return user
+
+    async def refresh_tokens(self, refresh_token: str) -> TokenResponse:
+        try:
+            payload = decode_token(refresh_token)
+            if payload.get("type") != "refresh":
+                raise UnauthorizedError("Invalid token type")
+            user_id = int(payload["sub"])
+        except jwt.ExpiredSignatureError:
+            raise UnauthorizedError("Refresh token expired, please login again")
+        except (jwt.InvalidTokenError, KeyError, ValueError):
+            raise UnauthorizedError("Invalid refresh token")
+
+        user = await self.get_by_id(user_id)
+        if not user:
+            raise UnauthorizedError("Invalid refresh token")
+
+        return TokenResponse(
+            access_token=create_access_token(user.id, user.role.value),
+            refresh_token=create_refresh_token(user.id),
+        )
