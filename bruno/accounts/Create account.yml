@@ -1,0 +1,29 @@
+info:
+  name: Create account
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{base_url}}/accounts?client_id={{client_id}}"
+  params:
+    - name: client_id
+      value: "{{client_id}}"
+      type: query
+  body:
+    type: json
+    data: |-
+      {
+        "account_number": "123",
+        "account_type": "checking",
+        "balance": 100
+      }
+  auth:
+    type: bearer
+    token: "{{jwt_token}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -1,0 +1,23 @@
+info:
+  name: update client
+  type: http
+  seq: 5
+
+http:
+  method: PATCH
+  url: "{{base_url}}/clients/{{client_id}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "julio"
+      }
+  auth:
+    type: bearer
+    token: "{{jwt_token}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
