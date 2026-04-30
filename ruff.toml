@@ -1,0 +1,20 @@
+line-length = 100
+target-version = "py312"
+exclude = ["alembic/", ".venv/"]
+
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes (imports no usados, variables indefinidas)
+    "I",   # isort (orden de imports)
+    "B",   # flake8-bugbear (antipatrones comunes)
+    "UP",  # pyupgrade (sintaxis moderna de Python)
+]
+ignore = [
+    "B008",  # no complaints sobre Depends() en argumentos de función
+    "E501",  # line too long — ruff format lo gestiona
+]
+
+[lint.isort]
+known-first-party = ["app"]

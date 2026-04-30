@@ -22,3 +22,8 @@ test.db
 # Alembic (solo versiones, no el env)
 # (alembic/ sí se sube, solo excluimos lo generado automáticamente)
 
+# Coverage
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
