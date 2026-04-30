@@ -1,13 +1,20 @@
-from fastapi import APIRouter, Depends, status, Query
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.api.v1.deps import get_current_user, require_roles
 from app.core.database import get_db
-from app.schemas.client import ClientCreate, ClientResponse, ClientWithAccountsResponse, ClientUpdate
+from app.models.user import User, UserRole
+from app.schemas.client import (
+    ClientCreate,
+    ClientResponse,
+    ClientUpdate,
+    ClientWithAccountsResponse,
+)
+from app.schemas.common import PaginatedResponse
 from app.schemas.errors import ErrorResponse
 from app.services.client_service import ClientService
-from app.schemas.common import PaginatedResponse
-from typing import Annotated
-from app.api.v1.deps import get_current_user, require_roles
-from app.models.user import User, UserRole
 
 router = APIRouter(prefix="/clients", tags=["Clients"])
 
@@ -26,8 +33,8 @@ _auth_responses = {
     },
 )
 async def create_client(
-    client_data: ClientCreate, 
-    db: AsyncSession = Depends(get_db),     
+    client_data: ClientCreate,
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.ANALYST))
     ):
     service = ClientService(db)
@@ -64,7 +71,7 @@ async def get_client_with_accounts(
     current_user: User = Depends(get_current_user)
 ):
     service = ClientService(db)
-    return await service.get_client_with_accounts(client_id) 
+    return await service.get_client_with_accounts(client_id)
 
 
 @router.get(
@@ -81,7 +88,7 @@ async def get_client(
     current_user: User = Depends(get_current_user),
     ):
     service = ClientService(db)
-    return await service.get_client(client_id) 
+    return await service.get_client(client_id)
 
 
 @router.patch(
@@ -100,4 +107,4 @@ async def update_client(
     current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.ANALYST)),
 ):
     service = ClientService(db)
-    return await service.update_client(client_id, update_data) 
+    return await service.update_client(client_id, update_data)

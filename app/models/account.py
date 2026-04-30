@@ -1,9 +1,17 @@
-from enum import Enum as PyEnum
+from __future__ import annotations
+
 from datetime import datetime
 from decimal import Decimal
-from sqlalchemy import String, DateTime, Numeric, ForeignKey, Enum, Boolean, func
+from enum import Enum as PyEnum
+from typing import TYPE_CHECKING
+
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from app.core.database import Base
+
+if TYPE_CHECKING:
+    from app.models.client import Client
 
 class AccountType(PyEnum):
     CHECKING = "checking"
@@ -28,7 +36,7 @@ class Account(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
-    client: Mapped["Client"] = relationship(
+    client: Mapped[Client] = relationship(
         "Client",
         back_populates="accounts",
         lazy="raise"  # fuerza MissingGreenlet si intentas lazy load accidentalmente

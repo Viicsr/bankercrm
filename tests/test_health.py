@@ -1,6 +1,8 @@
-from app.main import app 
-from app.core.database import get_db  
 from unittest.mock import AsyncMock
+
+from app.core.database import get_db
+from app.main import app
+
 
 def test_health_check_ok(client):
     response = client.get("/health")
@@ -15,8 +17,8 @@ def test_health_check_db_unreachable(client):
     async def broken_get_db():
         mock_session = AsyncMock()
         mock_session.execute.side_effect = Exception("DB unreachable")
-        yield mock_session  
-        
+        yield mock_session
+
     app.dependency_overrides[get_db] = broken_get_db
     try:
         response = client.get("/health")

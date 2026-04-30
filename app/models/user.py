@@ -1,8 +1,11 @@
-from enum import Enum as PyEnum
 from datetime import datetime
-from sqlalchemy import String, DateTime, Boolean, Enum, func
+from enum import Enum as PyEnum
+
+from sqlalchemy import Boolean, DateTime, Enum, String, func
 from sqlalchemy.orm import Mapped, mapped_column
+
 from app.core.database import Base
+
 
 class UserRole(PyEnum):
     ADMIN = "admin"

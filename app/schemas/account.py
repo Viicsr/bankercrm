@@ -1,7 +1,10 @@
-from pydantic import BaseModel, ConfigDict, field_validator
 from datetime import datetime
 from decimal import Decimal
+
+from pydantic import BaseModel, ConfigDict, field_validator
+
 from app.models.account import AccountType
+
 
 class AccountCreate(BaseModel):
     account_number: str

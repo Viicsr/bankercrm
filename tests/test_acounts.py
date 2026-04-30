@@ -1,5 +1,7 @@
-import pytest
 from decimal import Decimal
+
+import pytest
+
 
 # Fixture reutilizable — crea un cliente base para los tests de accounts
 @pytest.fixture

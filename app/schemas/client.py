@@ -1,6 +1,9 @@
-from pydantic import BaseModel, EmailStr, ConfigDict
 from datetime import datetime
-from app.schemas.account import AccountResponse 
+
+from pydantic import BaseModel, ConfigDict, EmailStr
+
+from app.schemas.account import AccountResponse
+
 
 class ClientCreate(BaseModel):
     name: str

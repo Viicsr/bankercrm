@@ -1,11 +1,13 @@
+import logging
+
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy.orm import selectinload
+
+from app.core.exceptions import ConflictError, NotFoundError
 from app.models.client import Client
 from app.schemas.client import ClientCreate, ClientResponse, ClientUpdate
 from app.schemas.common import PaginatedResponse
-from sqlalchemy.orm import selectinload
-from app.core.exceptions import NotFoundError, ConflictError
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +36,7 @@ class ClientService:
         )
         client = result.scalar_one_or_none()
         if not client:
-            raise NotFoundError("Client", client_id) 
+            raise NotFoundError("Client", client_id)
         return client
 
     async def list_clients(self, page: int = 1, size: int = 20, only_active: bool = True) -> PaginatedResponse[ClientResponse]:
@@ -42,7 +44,7 @@ class ClientService:
         offset = (page - 1) * size
         query = select(Client)
         if only_active:
-            query = query.where(Client.is_active == True)
+            query = query.where(Client.is_active)
 
         # Total count
         count_result = await self.db.execute(
@@ -76,7 +78,7 @@ class ClientService:
         logger.info("Client with accounts found", extra={"client_id": client.id, "email": client.email})
         return client
 
-    async def update_client(self, client_id: int, data: ClientUpdate) -> Client: 
+    async def update_client(self, client_id: int, data: ClientUpdate) -> Client:
         logger.info("Updating client", extra={"client_id": client_id, "fields": list(data.model_dump(exclude_unset=True).keys())})
         client = await self.get_client(client_id)
         update_data = data.model_dump(exclude_unset=True)

@@ -1,6 +1,7 @@
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession 
-from sqlalchemy.orm import DeclarativeBase # clase base para las declaraciones de SQLAlchemy (ORM) 
-from app.core.config import settings # configuración de la aplicación
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase  # clase base para las declaraciones de SQLAlchemy (ORM)
+
+from app.core.config import settings  # configuración de la aplicación
 
 engine = create_async_engine(
     settings.DATABASE_URL, # URL de la base de datos
@@ -12,8 +13,8 @@ engine = create_async_engine(
 
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
-class Base(DeclarativeBase): 
-    pass 
+class Base(DeclarativeBase):
+    pass
 
 async def get_db() -> AsyncSession: # función para obtener una sesión de la base de datos
     async with AsyncSessionLocal() as session: # crea una sesión de la base de datos

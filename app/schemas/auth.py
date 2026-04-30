@@ -1,5 +1,7 @@
 from pydantic import BaseModel, EmailStr
+
 from app.models.user import UserRole
+
 
 class UserRegister(BaseModel):
     email: EmailStr

@@ -1,9 +1,11 @@
 import asyncio
+
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
-from app.main import app
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
 from app.core.database import Base, get_db
+from app.main import app
 
 SQLALCHEMY_TEST_URL = "sqlite+aiosqlite:///./test.db"
 engine_test = create_async_engine(SQLALCHEMY_TEST_URL)
@@ -60,7 +62,7 @@ def readonly_user(client):
 
 
 @pytest.fixture
-def admin_user(client): 
+def admin_user(client):
     client.post(
         "/api/v1/auth/register",
         json={"email": "admin@test.com", "password": "Admin1234!", "role": "admin"},

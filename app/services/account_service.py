@@ -1,11 +1,13 @@
-from sqlalchemy.ext.asyncio import AsyncSession
+import logging
+
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.exceptions import ConflictError, NotFoundError
 from app.models.account import Account
 from app.models.client import Client
 from app.schemas.account import AccountCreate
 from app.services.client_service import ClientService
-from app.core.exceptions import NotFoundError, ConflictError
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +23,7 @@ class AccountService:
         return client
 
     async def create_account(self, client_id: int, data: AccountCreate) -> Account: # funcion para crear una cuenta
-        await self.client_service.get_client(client_id) 
+        await self.client_service.get_client(client_id)
 
         existing = await self.db.execute( # verificar si la cuenta ya existe
             select(Account).where(Account.account_number == data.account_number)
@@ -55,6 +57,6 @@ class AccountService:
         result = await self.db.execute(
             select(Account).where(Account.client_id == client_id)
         )
-        accounts = list(result.scalars().all()) 
+        accounts = list(result.scalars().all())
         logger.info("Accounts found", extra={"client_id": client_id, "count": len(accounts)})
         return accounts

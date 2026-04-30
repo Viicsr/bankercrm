@@ -1,6 +1,6 @@
 import logging
 import time
-from asgi_correlation_id import CorrelationIdMiddleware
+
 from asgi_correlation_id.context import correlation_id
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware

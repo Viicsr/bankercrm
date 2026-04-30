@@ -1,8 +1,15 @@
+from __future__ import annotations
+
 from datetime import datetime
-from sqlalchemy import String, DateTime, Boolean, func
-from sqlalchemy.orm import Mapped, mapped_column
+from typing import TYPE_CHECKING
+
+from sqlalchemy import Boolean, DateTime, String, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from app.core.database import Base
-from sqlalchemy.orm import relationship
+
+if TYPE_CHECKING:
+    from app.models.account import Account
 
 class Client(Base):
     __tablename__ = "clients"
@@ -17,7 +24,7 @@ class Client(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
-    accounts: Mapped[list["Account"]] = relationship(
+    accounts: Mapped[list[Account]] = relationship(
     "Account",
     back_populates="client",
     cascade="all, delete-orphan",

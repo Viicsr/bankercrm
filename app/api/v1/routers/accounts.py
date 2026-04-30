@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.api.v1.deps import get_current_user, require_roles
 from app.core.database import get_db
+from app.models.user import User, UserRole
 from app.schemas.account import AccountCreate, AccountResponse
 from app.schemas.errors import ErrorResponse
 from app.services.account_service import AccountService
 from app.services.client_service import ClientService
-from app.api.v1.deps import get_current_user, require_roles
-from app.models.user import User, UserRole
 
 router = APIRouter(prefix="/accounts", tags=["Accounts"])
 

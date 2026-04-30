@@ -1,10 +1,12 @@
+import json
 import logging
 import logging.config
-import json
 import sys
-from datetime import datetime, timezone
-from app.core.config import settings
+from datetime import UTC, datetime
+
 from asgi_correlation_id.context import correlation_id
+
+from app.core.config import settings
 
 
 class JSONFormatter(logging.Formatter):
@@ -12,7 +14,7 @@ class JSONFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         log_entry = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
@@ -70,4 +72,3 @@ def setup_logging() -> None:
     logging.getLogger("uvicorn.error").setLevel(logging.INFO)
     logging.getLogger("python_multipart").setLevel(logging.WARNING)
     logging.getLogger("passlib").setLevel(logging.WARNING)
-    

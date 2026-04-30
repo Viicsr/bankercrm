@@ -1,19 +1,28 @@
+import asyncio
+import logging
+import re
+import uuid
 from contextlib import asynccontextmanager
-import logging, asyncio, uuid, re
-from fastapi import FastAPI, Depends
+
+from asgi_correlation_id import CorrelationIdMiddleware
+from fastapi import Depends, FastAPI
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
-from app.core.config import settings
-from app.core.database import engine,get_db
-from app.api.v1.routers import clients, accounts, auth
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi.exceptions import RequestValidationError
+
+from app.api.v1.routers import accounts, auth, clients
+from app.core.config import settings
+from app.core.database import engine, get_db
+from app.core.error_handlers import (
+    app_exception_handler,
+    unhandled_exception_handler,
+    validation_exception_handler,
+)
 from app.core.exceptions import AppBaseException
-from app.core.error_handlers import (app_exception_handler, validation_exception_handler, unhandled_exception_handler)
 from app.core.logging_config import setup_logging
-from asgi_correlation_id import CorrelationIdMiddleware
 from app.middleware.request_id import RequestLoggingMiddleware
-from fastapi.middleware.cors import CORSMiddleware
 from app.middleware.security import SecurityHeadersMiddleware
 
 # Antes de crear la instancia de FastAPI
@@ -47,24 +56,24 @@ async def health_check(db: AsyncSession = Depends(get_db)):
             timeout=5.0
         )
         db_status = "connected"
-    except asyncio.TimeoutError:
+    except TimeoutError:
         return JSONResponse(status_code=503, content={
-            "status": "error", 
+            "status": "error",
             "db": "timeout",
-            "version": settings.APP_VERSION, 
+            "version": settings.APP_VERSION,
             "environment": settings.APP_ENV
         })
     except Exception:
         return JSONResponse(status_code=503, content={
-            "status": "error", 
+            "status": "error",
             "db": "unreachable",
-            "version": settings.APP_VERSION, 
+            "version": settings.APP_VERSION,
             "environment": settings.APP_ENV
         })
     return {
-        "status": "ok", 
+        "status": "ok",
         "db": db_status,
-        "version": settings.APP_VERSION, 
+        "version": settings.APP_VERSION,
         "environment": settings.APP_ENV
     }
 
