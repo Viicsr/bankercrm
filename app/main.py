@@ -28,7 +28,8 @@ from app.middleware.security import SecurityHeadersMiddleware
 # Antes de crear la instancia de FastAPI
 setup_logging()
 
-logger = logging.getLogger(__name__)        # logging.getLogger(__name__) i
+logger = logging.getLogger(__name__)  # logging.getLogger(__name__) i
+
 
 # Contexto de vida de la aplicación
 @asynccontextmanager
@@ -39,43 +40,49 @@ async def lifespan(app: FastAPI):
     await engine.dispose()
     logger.info("Database disconnected")
 
+
 # Creación de la aplicación FastAPI
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     docs_url="/docs" if settings.APP_ENV == "development" else None,
-    lifespan=lifespan
+    lifespan=lifespan,
 )
+
 
 # Endpoint de salud de la aplicación
 @app.get("/health")
 async def health_check(db: AsyncSession = Depends(get_db)):
     try:
-        await asyncio.wait_for(
-            db.execute(text("SELECT 1")),
-            timeout=5.0
-        )
+        await asyncio.wait_for(db.execute(text("SELECT 1")), timeout=5.0)
         db_status = "connected"
     except TimeoutError:
-        return JSONResponse(status_code=503, content={
-            "status": "error",
-            "db": "timeout",
-            "version": settings.APP_VERSION,
-            "environment": settings.APP_ENV
-        })
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "error",
+                "db": "timeout",
+                "version": settings.APP_VERSION,
+                "environment": settings.APP_ENV,
+            },
+        )
     except Exception:
-        return JSONResponse(status_code=503, content={
-            "status": "error",
-            "db": "unreachable",
-            "version": settings.APP_VERSION,
-            "environment": settings.APP_ENV
-        })
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "error",
+                "db": "unreachable",
+                "version": settings.APP_VERSION,
+                "environment": settings.APP_ENV,
+            },
+        )
     return {
         "status": "ok",
         "db": db_status,
         "version": settings.APP_VERSION,
-        "environment": settings.APP_ENV
+        "environment": settings.APP_ENV,
     }
+
 
 # Incluye el router de clientes en la aplicación
 app.include_router(clients.router, prefix="/api/v1")
@@ -98,9 +105,9 @@ app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(
     CorrelationIdMiddleware,
     header_name="X-Request-ID",
-    generator=lambda: uuid.uuid4().hex,   # genera UUID4 si el cliente no manda uno
-    validator=UUID4_REGEX.match,          # rechaza IDs que no sean UUID4 válidos
-    transformer=lambda a: a,              # devuelve el ID tal cual
+    generator=lambda: uuid.uuid4().hex,  # genera UUID4 si el cliente no manda uno
+    validator=UUID4_REGEX.match,  # rechaza IDs que no sean UUID4 válidos
+    transformer=lambda a: a,  # devuelve el ID tal cual
 )
 
 app.add_middleware(

@@ -25,9 +25,11 @@ class AccountCreate(BaseModel):
             raise ValueError("Account number cannot be empty")
         return v.upper().strip()
 
+
 class AccountUpdate(BaseModel):
     is_active: bool | None = None
     balance: Decimal | None = None
+
 
 class AccountResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)

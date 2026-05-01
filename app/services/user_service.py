@@ -17,6 +17,7 @@ from app.schemas.auth import TokenResponse, UserRegister
 
 logger = logging.getLogger(__name__)
 
+
 class UserService:
     def __init__(self, db: AsyncSession):
         self.db = db
@@ -28,9 +29,7 @@ class UserService:
 
     async def get_by_id(self, user_id: int) -> User | None:
         logger.info("Getting user by id", extra={"user_id": user_id})
-        result = await self.db.execute(
-            select(User).where(User.id == user_id, User.is_active)
-        )
+        result = await self.db.execute(select(User).where(User.id == user_id, User.is_active))
         return result.scalar_one_or_none()
 
     async def create_user(self, data: UserRegister) -> User:

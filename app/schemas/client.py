@@ -9,10 +9,12 @@ class ClientCreate(BaseModel):
     name: str
     email: EmailStr
 
+
 class ClientUpdate(BaseModel):
     name: str | None = None
     email: EmailStr | None = None
     is_active: bool | None = None
+
 
 class ClientResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -22,6 +24,7 @@ class ClientResponse(BaseModel):
     email: str
     is_active: bool
     created_at: datetime
+
 
 class ClientWithAccountsResponse(ClientResponse):
     accounts: list[AccountResponse] = []

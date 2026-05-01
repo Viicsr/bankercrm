@@ -11,19 +11,23 @@ SQLALCHEMY_TEST_URL = "sqlite+aiosqlite:///./test.db"
 engine_test = create_async_engine(SQLALCHEMY_TEST_URL)
 TestingSessionLocal = async_sessionmaker(engine_test, expire_on_commit=False)
 
+
 async def _create_tables():
     async with engine_test.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
+
 async def _drop_tables():
     async with engine_test.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+
 
 @pytest.fixture(scope="function", autouse=True)
 def setup_db():
     asyncio.run(_create_tables())
     yield
     asyncio.run(_drop_tables())
+
 
 @pytest.fixture
 def client():
@@ -38,6 +42,7 @@ def client():
 
     app.dependency_overrides.clear()
 
+
 @pytest.fixture
 def admin_headers(client) -> dict:
     client.post(
@@ -50,6 +55,7 @@ def admin_headers(client) -> dict:
     )
     token = login.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
+
 
 @pytest.fixture
 def readonly_user(client):

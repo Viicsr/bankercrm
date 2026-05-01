@@ -21,18 +21,35 @@ class JSONFormatter(logging.Formatter):
             "service": settings.APP_NAME,
             "environment": settings.APP_ENV,
             "request_id": correlation_id.get() or "-",
-
         }
 
         # Añade campos extra si los hay (pasados con extra={} en el logger)
         for key, value in record.__dict__.items():
             if key not in {
-                "timestamp", "level", "logger", "message",
-                "name", "msg", "args", "levelname", "levelno",
-                "pathname", "filename", "module", "exc_info",
-                "exc_text", "stack_info", "lineno", "funcName",
-                "created", "msecs", "relativeCreated", "thread",
-                "threadName", "processName", "process",
+                "timestamp",
+                "level",
+                "logger",
+                "message",
+                "name",
+                "msg",
+                "args",
+                "levelname",
+                "levelno",
+                "pathname",
+                "filename",
+                "module",
+                "exc_info",
+                "exc_text",
+                "stack_info",
+                "lineno",
+                "funcName",
+                "created",
+                "msecs",
+                "relativeCreated",
+                "thread",
+                "threadName",
+                "processName",
+                "process",
             }:
                 log_entry[key] = value
 

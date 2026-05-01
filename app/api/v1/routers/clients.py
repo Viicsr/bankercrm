@@ -23,6 +23,7 @@ _auth_responses = {
     403: {"model": ErrorResponse, "description": "Insufficient permissions"},
 }
 
+
 @router.post(
     "/",
     response_model=ClientResponse,
@@ -35,8 +36,8 @@ _auth_responses = {
 async def create_client(
     client_data: ClientCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.ANALYST))
-    ):
+    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.ANALYST)),
+):
     service = ClientService(db)
     return await service.create_client(client_data)
 
@@ -47,11 +48,11 @@ async def create_client(
     responses=_auth_responses,
 )
 async def list_clients(
-    page: Annotated[int, Query(ge=1)] = 1,           # ge=1: mínimo 1
-    size: Annotated[int, Query(ge=1, le=100)] = 20,   # le=100: máximo 100
+    page: Annotated[int, Query(ge=1)] = 1,  # ge=1: mínimo 1
+    size: Annotated[int, Query(ge=1, le=100)] = 20,  # le=100: máximo 100
     only_active: bool = True,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)  # cualquier rol autenticado
+    current_user: User = Depends(get_current_user),  # cualquier rol autenticado
 ):
     service = ClientService(db)
     return await service.list_clients(page=page, size=size, only_active=only_active)
@@ -68,7 +69,7 @@ async def list_clients(
 async def get_client_with_accounts(
     client_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     service = ClientService(db)
     return await service.get_client_with_accounts(client_id)
@@ -86,7 +87,7 @@ async def get_client(
     client_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    ):
+):
     service = ClientService(db)
     return await service.get_client(client_id)
 

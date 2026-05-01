@@ -41,6 +41,7 @@ def test_401_returns_standard_format(client):
 
 def test_403_returns_standard_format(client, readonly_user):
     from tests.test_auth import get_auth_headers
+
     headers = get_auth_headers(client, readonly_user["email"], readonly_user["password"])
     response = client.post(
         "/api/v1/clients",
@@ -49,6 +50,7 @@ def test_403_returns_standard_format(client, readonly_user):
     )
     assert response.status_code == 403
     assert response.json()["error"] == "ForbiddenError"
+
 
 def test_invalid_path_returns_404(client):
     response = client.get("/api/v1/ruta_que_no_existe")

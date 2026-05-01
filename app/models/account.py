@@ -13,10 +13,12 @@ from app.core.database import Base
 if TYPE_CHECKING:
     from app.models.client import Client
 
+
 class AccountType(PyEnum):
     CHECKING = "checking"
     SAVINGS = "savings"
     INVESTMENT = "investment"
+
 
 class Account(Base):
     __tablename__ = "accounts"
@@ -29,9 +31,7 @@ class Account(Base):
     account_type: Mapped[AccountType] = mapped_column(Enum(AccountType), nullable=False)
     balance: Mapped[Decimal] = mapped_column(Numeric(15, 2), default=Decimal("0.00"))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
@@ -39,5 +39,5 @@ class Account(Base):
     client: Mapped[Client] = relationship(
         "Client",
         back_populates="accounts",
-        lazy="raise"  # fuerza MissingGreenlet si intentas lazy load accidentalmente
+        lazy="raise",  # fuerza MissingGreenlet si intentas lazy load accidentalmente
     )

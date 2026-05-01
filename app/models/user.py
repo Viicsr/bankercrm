@@ -12,6 +12,7 @@ class UserRole(PyEnum):
     ANALYST = "analyst"
     READ_ONLY = "read_only"
 
+
 class User(Base):
     __tablename__ = "users"
 
@@ -22,6 +23,4 @@ class User(Base):
         Enum(UserRole), nullable=False, default=UserRole.READ_ONLY
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

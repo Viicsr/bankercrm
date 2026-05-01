@@ -1,4 +1,3 @@
-
 # Helper reutilizable para obtener headers de auth
 def get_auth_headers(client, email: str, password: str) -> dict:
     response = client.post(

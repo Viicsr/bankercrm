@@ -8,6 +8,7 @@ class UserRegister(BaseModel):
     password: str
     role: UserRole = UserRole.READ_ONLY
 
+
 class UserResponse(BaseModel):
     id: int
     email: str
@@ -16,10 +17,12 @@ class UserResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
+
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
+
 
 class RefreshRequest(BaseModel):
     refresh_token: str

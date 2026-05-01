@@ -13,6 +13,7 @@ def test_health_check_ok(client):
     assert "version" in data
     assert "environment" in data
 
+
 def test_health_check_db_unreachable(client):
     async def broken_get_db():
         mock_session = AsyncMock()

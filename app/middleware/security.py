@@ -16,8 +16,6 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
         # Solo en producción — en dev puede bloquear Swagger UI
         if request.app.state.settings.APP_ENV == "production":
-            response.headers["Strict-Transport-Security"] = (
-                "max-age=31536000; includeSubDomains"
-            )
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 
         return response

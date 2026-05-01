@@ -18,9 +18,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 
 def create_access_token(user_id: int, role: str) -> str:
-    expire = datetime.now(UTC) + timedelta(
-        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
-    )
+    expire = datetime.now(UTC) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     payload = {
         "sub": str(user_id),
         "role": role,
@@ -32,9 +30,7 @@ def create_access_token(user_id: int, role: str) -> str:
 
 
 def create_refresh_token(user_id: int) -> str:
-    expire = datetime.now(UTC) + timedelta(
-        days=settings.REFRESH_TOKEN_EXPIRE_DAYS
-    )
+    expire = datetime.now(UTC) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     payload = {
         "sub": str(user_id),
         "type": "refresh",
@@ -46,6 +42,4 @@ def create_refresh_token(user_id: int) -> str:
 
 def decode_token(token: str) -> dict[str, Any]:
     # Lanza jwt.ExpiredSignatureError o jwt.InvalidTokenError si falla
-    return jwt.decode(
-        token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
-    )
+    return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])

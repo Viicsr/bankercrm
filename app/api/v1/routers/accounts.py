@@ -27,7 +27,7 @@ async def create_account(
     client_id: int,
     account_data: AccountCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.ANALYST))
+    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.ANALYST)),
 ):
     service = AccountService(db=db, client_service=ClientService(db=db))
     return await service.create_account(client_id, account_data)
@@ -45,7 +45,7 @@ async def create_account(
 async def get_account(
     account_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     service = AccountService(db=db, client_service=ClientService(db=db))
     return await service.get_account(account_id)

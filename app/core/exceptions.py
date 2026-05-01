@@ -1,5 +1,6 @@
 class AppBaseException(Exception):
     """Excepción raíz de la aplicación. Todas las demás heredan de aquí."""
+
     status_code: int = 500
     detail: str = "Internal server error"
 
@@ -29,6 +30,7 @@ class ForbiddenError(AppBaseException):
 class ValidationError(AppBaseException):
     status_code = 422
     detail = "Validation failed"
+
 
 class UnauthorizedError(AppBaseException):
     status_code = 401
