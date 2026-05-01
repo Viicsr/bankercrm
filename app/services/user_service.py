@@ -51,7 +51,7 @@ class UserService:
         logger.info("Authentication attempt")
         user = await self.get_by_email(email)
         # Mensaje idéntico para ambos casos — no filtra información
-        if not user or not verify_password(password, user.hashed_password) or not user.is_active:
+        if not user or not user.is_active or not verify_password(password, user.hashed_password):
             raise UnauthorizedError("Invalid email or password")
         return user
 

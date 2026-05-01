@@ -22,7 +22,7 @@ class AccountService:
     ) -> Client:  # funcion auxiliar para obtener el cliente o lanzar un error si no existe
         client = await self.client_service.get_client(client_id)  # Delegado en client service
         if not client or not client.is_active:
-            raise NotFoundError(entity="client", entity_id=client_id)
+            raise NotFoundError("Client", client_id)
         return client
 
     async def create_account(
