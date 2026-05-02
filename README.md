@@ -496,6 +496,10 @@ tests/test_middleware.py::test_error_response_includes_request_id PASSED
 38 passed in X.XXs
 ```
 
+## CI
+
+[![CI Pipeline](https://github.com/Viicsr/bankercrm/actions/workflows/ci.yml/badge.svg)](https://github.com/Viicsr/bankercrm/actions/workflows/ci.yml)
+
 ## Design Decisions (ADR)
 
 ### ADR-001: selectinload over joinedload for one-to-many relationships
