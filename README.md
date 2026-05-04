@@ -1,18 +1,22 @@
 # BankCRM API
 
+[![CI Pipeline](https://github.com/Viicsr/bankercrm/actions/workflows/ci.yml/badge.svg)](https://github.com/Viicsr/bankercrm/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/Viicsr/bankercrm/branch/main/graph/badge.svg)](https://codecov.io/gh/Viicsr/bankercrm)
+
 REST API for banking CRM built with FastAPI, SQLAlchemy 2.0, and PostgreSQL.
 
-## Tech Stack
+## Stack
 
-- FastAPI — async REST framework
-- SQLAlchemy 2.0 — async ORM
-- Alembic — database migrations
-- PostgreSQL — production database
-- Pydantic v2 — data validation
-- PyJWT + passlib[bcrypt] — JWT authentication and password hashing
-- Docker — database container
-- pytest — testing
-- asgi-correlation-id — X-Request-ID propagation across request lifecycle
+| Capa | Tecnología |
+|---|---|
+| Framework | FastAPI 0.115 + Python 3.12 |
+| Base de datos | PostgreSQL 16 + SQLAlchemy 2.0 async |
+| Auth | JWT (PyJWT) + RBAC con 3 roles |
+| Migraciones | Alembic |
+| Tests | pytest + pytest-asyncio + httpx |
+| CI/CD | GitHub Actions (lint → test → build) |
+| Linting | Ruff |
+| Contenedor | Docker multi-stage |
 
 ## Architecture
 
@@ -92,6 +96,9 @@ bankercrm/
 │   │           ├── accounts.py # Endpoints de cuentas (protegidos por rol)
 │   │           └── auth.py     # register / login / refresh
 │   └── main.py                 # Entrypoint + lifespan + exception handlers + middleware stack
+├── .github/
+│   └── workflows/
+│       └── ci.yml              # GitHub Actions — lint → test → build
 ├── alembic/                    # Migraciones versionadas
 ├── bruno/                      # Colección Bruno — requests organizadas por recurso
 │   ├── auth/
@@ -110,13 +117,17 @@ bankercrm/
 │   │   └── health check.yml
 │   └── bruno.json              # Configuración de la colección
 ├── tests/
-│   ├── conftest.py             # Fixtures: setup_db + client + user fixtures (SQLite async)
 │   ├── test_health.py
 │   ├── test_clients.py
 │   ├── test_accounts.py
 │   ├── test_auth.py
 │   ├── test_errors.py          # Formato estándar de errores (404, 409, 422, 401, 403)
 │   └── test_middleware.py      # Request ID, process time, security headers
+├── Dockerfile                  # Multi-stage build (builder + runtime)
+├── .dockerignore
+├── ruff.toml                   # Linter + formatter config (reemplaza flake8/black/isort)
+├── conftest.py             # Fixtures: setup_db + client + user fixtures (SQLite async)
+├── pytest.ini                  # asyncio_mode + coverage config
 ├── .env.example
 ├── requirements.txt
 └── docker-compose.yml
@@ -446,26 +457,13 @@ Response shape:
 ## Running Tests
 
 ```bash
-pytest tests/ -v
+pytest tests/ -v --cov=app
 ```
 
 Tests use SQLite in-memory — no Docker required.
 
 Expected output:
 ```
-tests/test_auth.py::test_register_user PASSED
-tests/test_auth.py::test_register_duplicate_email PASSED
-tests/test_auth.py::test_login_success PASSED
-tests/test_auth.py::test_login_wrong_password PASSED
-tests/test_auth.py::test_login_nonexistent_email PASSED
-tests/test_auth.py::test_protected_endpoint_without_token PASSED
-tests/test_auth.py::test_protected_endpoint_with_invalid_token PASSED
-tests/test_auth.py::test_admin_can_create_client PASSED
-tests/test_auth.py::test_readonly_cannot_create_client PASSED
-tests/test_auth.py::test_readonly_can_read_clients PASSED
-tests/test_auth.py::test_refresh_token PASSED
-tests/test_auth.py::test_refresh_with_access_token_fails PASSED
-tests/test_accounts.py::test_create_account PASSED
 tests/test_acounts.py::test_create_account PASSED
 tests/test_acounts.py::test_create_account_negative_balance PASSED
 tests/test_acounts.py::test_create_account_duplicate_number PASSED
@@ -475,30 +473,66 @@ tests/test_acounts.py::test_get_client_with_accounts PASSED
 tests/test_acounts.py::test_list_clients_paginated PASSED
 tests/test_acounts.py::test_list_clients_page_size_limit PASSED
 tests/test_acounts.py::test_update_client PASSED
+tests/test_auth.py::test_register_user PASSED
+tests/test_auth.py::test_register_duplicate_email PASSED
+tests/test_auth.py::test_login_success PASSED
+tests/test_auth.py::test_login_wrong_password PASSED                                                                                       
+tests/test_auth.py::test_login_nonexistent_email PASSED
+tests/test_auth.py::test_protected_endpoint_without_token PASSED
+tests/test_auth.py::test_protected_endpoint_with_invalid_token PASSED
+tests/test_auth.py::test_admin_can_create_client PASSED
+tests/test_auth.py::test_readonly_cannot_create_client PASSED
+tests/test_auth.py::test_readonly_can_read_clients PASSED
+tests/test_auth.py::test_refresh_token PASSED
+tests/test_auth.py::test_refresh_with_access_token_fails PASSED
 tests/test_client.py::test_create_client PASSED
 tests/test_client.py::test_create_client_duplicate_email PASSED
 tests/test_client.py::test_get_client PASSED
 tests/test_client.py::test_get_client_not_found PASSED
-tests/test_health.py::test_health_check_ok PASSED
-tests/test_health.py::test_health_check_db_unreachable PASSED
 tests/test_errors.py::test_404_returns_standard_format PASSED
 tests/test_errors.py::test_409_on_duplicate_email PASSED
 tests/test_errors.py::test_422_validation_error_format PASSED
 tests/test_errors.py::test_401_returns_standard_format PASSED
 tests/test_errors.py::test_403_returns_standard_format PASSED
 tests/test_errors.py::test_invalid_path_returns_404 PASSED
+tests/test_health.py::test_health_check_ok PASSED
+tests/test_health.py::test_health_check_db_unreachable PASSED
 tests/test_middleware.py::test_request_id_header_present PASSED
 tests/test_middleware.py::test_process_time_header_present PASSED
 tests/test_middleware.py::test_security_headers_present PASSED
 tests/test_middleware.py::test_each_request_has_unique_request_id PASSED
 tests/test_middleware.py::test_error_response_includes_request_id PASSED
+tests/test_services.py::test_create_client_duplicate_raises_conflict PASSED
+tests/test_services.py::test_get_client_not_found_raises PASSED
+tests/test_services.py::test_update_client_not_found_raises PASSED
+tests/test_services.py::test_list_clients_inactive_included PASSED
+tests/test_services.py::test_get_client_with_accounts_not_found PASSED
+tests/test_services.py::test_create_account_duplicate_raises_conflict PASSED
+tests/test_services.py::test_get_account_not_found_raises PASSED
+tests/test_services.py::test_get_client_or_raise_inactive_client PASSED
+tests/test_services.py::test_create_user_duplicate_raises_conflict PASSED
+tests/test_services.py::test_authenticate_wrong_password_raises PASSED
+tests/test_services.py::test_authenticate_inactive_user_raises PASSED
+tests/test_services.py::test_refresh_tokens_expired_raises PASSED
+tests/test_services.py::test_refresh_tokens_wrong_type_raises PASSED
+tests/test_services.py::test_refresh_tokens_user_not_found_raises PASSED
 
-38 passed in X.XXs
+52 passed in 10.76s, coverage 89.69%
 ```
 
-## CI
+## CI/CD Pipeline
 
-[![CI Pipeline](https://github.com/Viicsr/bankercrm/actions/workflows/ci.yml/badge.svg)](https://github.com/Viicsr/bankercrm/actions/workflows/ci.yml)
+Every push to `main` or `develop` runs three jobs in sequence:
+
+| Job | What it does | Fails if |
+|---|---|---|
+| **Lint** | `ruff check` + `ruff format --check` | Any style violation or unused import |
+| **Test** | `pytest` with SQLite in-memory | Any test fails or coverage < 80% |
+| **Build** | Docker multi-stage build | Image doesn't build cleanly |
+
+`test` only runs if `lint` passes. `build` only runs if `test` passes.
+
+Branch `main` is protected — merge requires all three jobs green.
 
 ## Design Decisions (ADR)
 
@@ -553,6 +587,23 @@ The `/health` endpoint uses `asyncio.wait_for` with a 5-second timeout to detect
 **Decision:** Bruno collections are plain `.bru` files committed to the repository in the `bruno/` directory.
 **Alternative considered:** Postman (stores collections in the cloud, requires an account) or Insomnia (similar cloud dependency).
 **Trade-off:** Bruno has a smaller ecosystem than Postman, but its file-based storage means the collection is always in sync with the code, works offline, and has no account requirement.
+
+### ADR-011: Ruff as unified linter and formatter
+
+**Context:** Python linting historically requires multiple tools: flake8, isort, black, pyupgrade — each with its own config and version pinning.  
+**Decision:** Ruff replaces all of them. Single binary, single config file (`ruff.toml`), 10-100x faster.  
+**Alternative considered:** flake8 + black + isort (the traditional stack).  
+**Trade-off:** Ruff is younger than flake8, but as of 2026 it's the de facto standard in new Python projects. The unified config eliminates version conflicts between tools.
+
+### ADR-012: GitHub Actions over external CI providers
+
+**Context:** The project needs a CI/CD pipeline to automate lint, test, and build checks on every push.  
+**Decision:** GitHub Actions, configured in `.github/workflows/ci.yml`.  
+**Alternatives considered:** CircleCI, Jenkins, GitLab CI.  
+**Trade-offs:**
+- **Cost:** GitHub Actions is free for public repositories and includes 2,000 minutes/month for private repos on the free plan. CircleCI free tier is limited to 6,000 credits/month (~30 min of compute). Jenkins is free but requires self-hosted infrastructure — a VM, maintenance, and operational overhead that is out of scope for this phase.
+- **Integration:** GitHub Actions runs natively inside the repository — no external accounts, no webhook configuration, no OAuth setup. The workflow file lives alongside the code and is versioned with it.
+- **Ecosystem:** The GitHub Actions marketplace provides first-party actions for the exact tools used in this pipeline (`actions/checkout`, `docker/build-push-action`, `codecov/codecov-action`), maintained by the respective tool owners.
 
 ## Daily Startup
 
