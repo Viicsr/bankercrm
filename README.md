@@ -1,5 +1,8 @@
 # BankCRM API
 
+[![CI Pipeline](https://github.com/Viicsr/bankercrm/actions/workflows/ci.yml/badge.svg)](https://github.com/Viicsr/bankercrm/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/Viicsr/bankercrm/branch/main/graph/badge.svg)](https://codecov.io/gh/Viicsr/bankercrm)
+
 REST API for banking CRM built with FastAPI, SQLAlchemy 2.0, and PostgreSQL.
 
 ## Tech Stack
