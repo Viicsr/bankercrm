@@ -1,6 +1,5 @@
 import json
 import logging
-import logging.config
 import sys
 from datetime import UTC, datetime
 
@@ -60,12 +59,26 @@ class JSONFormatter(logging.Formatter):
         return json.dumps(log_entry, default=str)
 
 
+class DevFormatter(logging.Formatter):
+    """Formato legible para desarrollo que incluye campos extra del middleware."""
+
+    EXTRA_FIELDS = {"method", "path", "status_code", "duration_ms"}
+
+    def format(self, record: logging.LogRecord) -> str:
+        base = super().format(record)
+        extras = {k: v for k, v in record.__dict__.items() if k in self.EXTRA_FIELDS}
+        if extras:
+            extra_str = " | " + " ".join(f"{k}={v}" for k, v in extras.items())
+            return base + extra_str
+        return base
+
+
 def setup_logging() -> None:
     log_level = logging.DEBUG if settings.APP_ENV == "development" else logging.INFO
 
     # Formato según entorno: JSON en producción, legible en desarrollo
     if settings.APP_ENV == "development":
-        formatter = logging.Formatter(
+        formatter = DevFormatter(
             "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
             datefmt="%H:%M:%S",
         )
