@@ -1,5 +1,3 @@
-
-
 async def get_auth_headers(client, email: str, password: str) -> dict:
     response = await client.post(
         "/api/v1/auth/login",
