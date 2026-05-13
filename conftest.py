@@ -1,4 +1,5 @@
 import asyncio
+import os
 
 import pytest
 from fastapi.testclient import TestClient
@@ -7,8 +8,14 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from app.core.database import Base, get_db
 from app.main import app
 
-SQLALCHEMY_TEST_URL = "sqlite+aiosqlite:///./test.db"
-engine_test = create_async_engine(SQLALCHEMY_TEST_URL)
+# En CI usará PostgreSQL (DATABASE_URL real), en local SQLite
+TEST_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./test.db")
+
+engine_test = create_async_engine(
+    TEST_DATABASE_URL,
+    echo=False,
+)
+
 TestingSessionLocal = async_sessionmaker(engine_test, expire_on_commit=False)
 
 
