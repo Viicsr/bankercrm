@@ -1,12 +1,10 @@
 from decimal import Decimal
+import pytest_asyncio
 
-import pytest
 
-
-# Fixture reutilizable — crea un cliente base para los tests de accounts
-@pytest.fixture
-def existing_client(client, admin_headers):
-    response = client.post(
+@pytest_asyncio.fixture
+async def existing_client(client, admin_headers):
+    response = await client.post(
         "/api/v1/clients",
         json={"name": "Test Client", "email": "accounts@test.com"},
         headers=admin_headers,
@@ -15,8 +13,8 @@ def existing_client(client, admin_headers):
     return response.json()
 
 
-def test_create_account(client, existing_client, admin_headers):
-    response = client.post(
+async def test_create_account(client, existing_client, admin_headers):
+    response = await client.post(
         "/api/v1/accounts",
         params={"client_id": existing_client["id"]},
         json={"account_number": "ES001", "account_type": "checking", "balance": "1000.00"},
@@ -29,35 +27,35 @@ def test_create_account(client, existing_client, admin_headers):
     assert Decimal(data["balance"]) == Decimal("1000.00")
 
 
-def test_create_account_negative_balance(client, existing_client, admin_headers):
-    response = client.post(
+async def test_create_account_negative_balance(client, existing_client, admin_headers):
+    response = await client.post(
         "/api/v1/accounts",
         params={"client_id": existing_client["id"]},
         json={"account_number": "ES002", "account_type": "savings", "balance": "-50.00"},
         headers=admin_headers,
     )
-    assert response.status_code == 422  # Pydantic validation error
+    assert response.status_code == 422
 
 
-def test_create_account_duplicate_number(client, existing_client, admin_headers):
+async def test_create_account_duplicate_number(client, existing_client, admin_headers):
     payload = {"account_number": "ES003", "account_type": "checking", "balance": "0"}
-    client.post(
+    await client.post(
         "/api/v1/accounts",
         params={"client_id": existing_client["id"]},
         json=payload,
         headers=admin_headers,
     )
-    response = client.post(
+    response = await client.post(
         "/api/v1/accounts",
         params={"client_id": existing_client["id"]},
         json=payload,
         headers=admin_headers,
     )
-    assert response.status_code == 409  # ValueError del service
+    assert response.status_code == 409
 
 
-def test_create_account_nonexistent_client(client, admin_headers):
-    response = client.post(
+async def test_create_account_nonexistent_client(client, admin_headers):
+    response = await client.post(
         "/api/v1/accounts",
         params={"client_id": 99999},
         json={"account_number": "ES999", "account_type": "savings", "balance": "0"},
@@ -66,27 +64,27 @@ def test_create_account_nonexistent_client(client, admin_headers):
     assert response.status_code == 404
 
 
-def test_get_account(client, existing_client, admin_headers):
-    create = client.post(
+async def test_get_account(client, existing_client, admin_headers):
+    create = await client.post(
         "/api/v1/accounts",
         params={"client_id": existing_client["id"]},
         json={"account_number": "ES004", "account_type": "investment", "balance": "5000"},
         headers=admin_headers,
     )
     account_id = create.json()["id"]
-    response = client.get(f"/api/v1/accounts/{account_id}", headers=admin_headers)
+    response = await client.get(f"/api/v1/accounts/{account_id}", headers=admin_headers)
     assert response.status_code == 200
     assert response.json()["id"] == account_id
 
 
-def test_get_client_with_accounts(client, existing_client, admin_headers):
-    client.post(
+async def test_get_client_with_accounts(client, existing_client, admin_headers):
+    await client.post(
         "/api/v1/accounts",
         params={"client_id": existing_client["id"]},
         json={"account_number": "ES005", "account_type": "checking", "balance": "100"},
         headers=admin_headers,
     )
-    response = client.get(
+    response = await client.get(
         f"/api/v1/clients/{existing_client['id']}/accounts", headers=admin_headers
     )
     assert response.status_code == 200
@@ -96,14 +94,16 @@ def test_get_client_with_accounts(client, existing_client, admin_headers):
     assert data["accounts"][0]["account_number"] == "ES005"
 
 
-def test_list_clients_paginated(client, admin_headers):
+async def test_list_clients_paginated(client, admin_headers):
     for i in range(5):
-        client.post(
+        await client.post(
             "/api/v1/clients",
             json={"name": f"Client {i}", "email": f"client{i}@test.com"},
             headers=admin_headers,
         )
-    response = client.get("/api/v1/clients", params={"page": 1, "size": 3}, headers=admin_headers)
+    response = await client.get(
+        "/api/v1/clients", params={"page": 1, "size": 3}, headers=admin_headers
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["size"] == 3
@@ -112,17 +112,19 @@ def test_list_clients_paginated(client, admin_headers):
     assert len(data["items"]) == 3
 
 
-def test_list_clients_page_size_limit(client, admin_headers):
-    response = client.get("/api/v1/clients", params={"page": 1, "size": 200}, headers=admin_headers)
+async def test_list_clients_page_size_limit(client, admin_headers):
+    response = await client.get(
+        "/api/v1/clients", params={"page": 1, "size": 200}, headers=admin_headers
+    )
     assert response.status_code == 422
 
 
-def test_update_client(client, existing_client, admin_headers):
-    response = client.patch(
+async def test_update_client(client, existing_client, admin_headers):
+    response = await client.patch(
         f"/api/v1/clients/{existing_client['id']}",
         json={"name": "Updated Name"},
         headers=admin_headers,
     )
     assert response.status_code == 200
     assert response.json()["name"] == "Updated Name"
-    assert response.json()["email"] == existing_client["email"]  # no cambia
+    assert response.json()["email"] == existing_client["email"]
