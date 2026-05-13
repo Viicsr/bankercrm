@@ -1,3 +1,4 @@
+import logging
 import os
 
 import pytest_asyncio
@@ -6,7 +7,6 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.core.database import Base, get_db
 from app.main import app
-import logging
 
 logging.getLogger("aiosqlite").setLevel(logging.WARNING)
 TEST_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./test.db")

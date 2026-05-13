@@ -1,4 +1,3 @@
-import pytest
 
 
 async def get_auth_headers(client, email: str, password: str) -> dict:
