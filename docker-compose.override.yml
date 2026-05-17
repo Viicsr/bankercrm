@@ -1,0 +1,14 @@
+services:
+  app:
+    # Monta el código fuente como volumen para hot reload dentro del contenedor
+    volumes:
+      - ./app:/app/app
+      - ./alembic:/app/alembic
+    environment:
+      APP_ENV: development
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  db:
+    # En desarrollo expone también el puerto 5432 para conectar con DBeaver/psql local
+    ports:
+      - "5432:5432"
