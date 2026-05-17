@@ -7,16 +7,16 @@ REST API for banking CRM built with FastAPI, SQLAlchemy 2.0, and PostgreSQL.
 
 ## Stack
 
-| Capa | Tecnología |
+| Layer | Technology |
 |---|---|
 | Framework | FastAPI 0.115 + Python 3.12 |
-| Base de datos | PostgreSQL 16 + SQLAlchemy 2.0 async |
-| Auth | JWT (PyJWT) + RBAC con 3 roles |
-| Migraciones | Alembic |
+| Database | PostgreSQL 16 + SQLAlchemy 2.0 async |
+| Auth | JWT (PyJWT) + RBAC with 3 roles |
+| Migrations | Alembic |
 | Tests | pytest + pytest-asyncio + httpx |
 | CI/CD | GitHub Actions (lint → test → build) |
 | Linting | Ruff |
-| Contenedor | Docker multi-stage |
+| Container | Docker multi-stage |
 
 ## Architecture
 
@@ -51,13 +51,13 @@ REST API for banking CRM built with FastAPI, SQLAlchemy 2.0, and PostgreSQL.
                 └───────────────┘
 ```
 
-Cada capa tiene una única responsabilidad:
-- **Router** — recibe HTTP, valida parámetros, delega al service. Sin try/except ni lógica de error
-- **Service** — lógica de negocio pura. Lanza excepciones de dominio, sin dependencias de FastAPI
+Each layer has a single responsibility:
+- **Router** — receives HTTP, validates parameters, delegates to the service. No try/except or error logic
+- **Service** — pure business logic. Throws domain exceptions, no FastAPI dependencies
 - **Middleware** — cross-cutting concerns: request ID, timing, security headers, logging
-- **Exception Handlers** — único punto de traducción de excepciones de dominio a respuestas HTTP
-- **Security** — JWT stateless, hashing bcrypt, dependencias de autenticación y RBAC
-- **ORM** — modelos SQLAlchemy, queries async, relaciones
+- **Exception Handlers** — single translation point from domain exceptions to HTTP responses
+- **Security** — stateless JWT, bcrypt hashing, authentication and RBAC dependencies
+- **ORM** — SQLAlchemy models, async queries, relationships
 
 ## Project Structure
 
@@ -65,42 +65,42 @@ Cada capa tiene una única responsabilidad:
 bankercrm/
 ├── app/
 │   ├── core/
-│   │   ├── config.py           # Settings con pydantic-settings (12-Factor) + ALLOWED_ORIGINS
+│   │   ├── config.py           # Settings via pydantic-settings (12-Factor) + ALLOWED_ORIGINS
 │   │   ├── database.py         # Async engine + connection pool + get_db
-│   │   ├── exceptions.py       # Jerarquía de excepciones de dominio (AppBaseException → NotFoundError, ConflictError, ForbiddenError, UnauthorizedError...)
-│   │   ├── error_handlers.py   # Handlers globales: app_exception_handler, validation_exception_handler, unhandled_exception_handler
-│   │   ├── logging_config.py   # JSONFormatter + setup_logging() — JSON en producción, texto legible en desarrollo
+│   │   ├── exceptions.py       # Domain exception hierarchy (AppBaseException → NotFoundError, ConflictError...)
+│   │   ├── error_handlers.py   # Global handlers: app_exception_handler, validation_exception_handler
+│   │   ├── logging_config.py   # JSONFormatter + setup_logging() — JSON in production, readable text in development
 │   │   └── security.py         # hash_password, verify_password, create/decode JWT
 │   ├── middleware/
-│   │   ├── request_id.py       # RequestLoggingMiddleware — logging estructurado por request con correlation ID, X-Process-Time
-│   │   └── security.py         # SecurityHeadersMiddleware — X-Content-Type-Options, X-Frame-Options, Referrer-Policy, HSTS
+│   │   ├── request_id.py       # RequestLoggingMiddleware — structured logging per request with correlation ID
+│   │   └── security.py         # SecurityHeadersMiddleware — X-Content-Type-Options, X-Frame-Options, HSTS
 │   ├── models/
-│   │   ├── client.py           # ORM Client con relationship a accounts
-│   │   ├── account.py          # ORM Account con FK a clients + AccountType Enum
-│   │   └── user.py             # ORM User con UserRole Enum (admin, analyst, read_only)
+│   │   ├── client.py           # ORM Client with relationship to accounts
+│   │   ├── account.py          # ORM Account with FK to clients + AccountType Enum
+│   │   └── user.py             # ORM User with UserRole Enum (admin, analyst, read_only)
 │   ├── schemas/
 │   │   ├── client.py           # ClientCreate / ClientUpdate / ClientResponse / ClientWithAccountsResponse
 │   │   ├── account.py          # AccountCreate / AccountUpdate / AccountResponse
 │   │   ├── auth.py             # UserRegister / UserResponse / TokenResponse / RefreshRequest
-│   │   ├── common.py           # PaginatedResponse[T] — genérico reutilizable
-│   │   └── errors.py           # ErrorResponse, FieldError — schema estándar RFC 7807
+│   │   ├── common.py           # PaginatedResponse[T] — reusable generic
+│   │   └── errors.py           # ErrorResponse, FieldError — RFC 7807-inspired standard schema
 │   ├── services/
-│   │   ├── client_service.py   # CRUD + paginación
-│   │   ├── account_service.py  # CRUD + validación de cliente activo
-│   │   └── user_service.py     # Registro, autenticación, búsqueda por email/id
+│   │   ├── client_service.py   # CRUD + pagination
+│   │   ├── account_service.py  # CRUD + active client validation
+│   │   └── user_service.py     # Register, authenticate, lookup by email/id
 │   ├── api/
 │   │   └── v1/
 │   │       ├── deps.py         # get_current_user + require_roles (RBAC factory)
 │   │       └── routers/
-│   │           ├── clients.py  # Endpoints de clientes (protegidos por rol)
-│   │           ├── accounts.py # Endpoints de cuentas (protegidos por rol)
+│   │           ├── clients.py  # Client endpoints (role-protected)
+│   │           ├── accounts.py # Account endpoints (role-protected)
 │   │           └── auth.py     # register / login / refresh
-│   └── main.py                 # Entrypoint + lifespan + exception handlers + middleware stack
+│   └── main.py                 # Entry point + lifespan + exception handlers + middleware stack
 ├── .github/
 │   └── workflows/
 │       └── ci.yml              # GitHub Actions — lint → test → build
-├── alembic/                    # Migraciones versionadas
-├── bruno/                      # Colección Bruno — requests organizadas por recurso
+├── alembic/                    # Versioned migrations
+├── bruno/                      # Bruno collection — requests organised by resource
 │   ├── auth/
 │   │   ├── register admin.yml
 │   │   ├── refresh.yml
@@ -115,22 +115,53 @@ bankercrm/
 │   │   └── create account.yml
 │   ├── health/
 │   │   └── health check.yml
-│   └── bruno.json              # Configuración de la colección
+│   └── bruno.json
 ├── tests/
 │   ├── test_health.py
-│   ├── test_clients.py
-│   ├── test_accounts.py
+│   ├── test_acounts.py
 │   ├── test_auth.py
-│   ├── test_errors.py          # Formato estándar de errores (404, 409, 422, 401, 403)
-│   └── test_middleware.py      # Request ID, process time, security headers
+│   ├── test_client.py
+│   ├── test_errors.py          # Standard error format (404, 409, 422, 401, 403)
+│   ├── test_middleware.py      # Request ID, process time, security headers
+│   └── test_services.py        # Unit tests with mocked DB session
+├── scripts/
+│   └── entrypoint.sh
 ├── Dockerfile                  # Multi-stage build (builder + runtime)
+├── docker-compose.yml
+├── docker-compose.override.yml # Development overrides (hot reload, volumes)
 ├── .dockerignore
-├── ruff.toml                   # Linter + formatter config (reemplaza flake8/black/isort)
-├── conftest.py             # Fixtures: setup_db + client + user fixtures (SQLite async)
+├── Makefile
+├── ruff.toml                   # Linter + formatter config (replaces flake8/black/isort)
+├── conftest.py                 # Async fixtures: per-test engine, AsyncClient + ASGITransport
 ├── pytest.ini                  # asyncio_mode + coverage config
 ├── .env.example
-├── requirements.txt
-└── docker-compose.yml
+├── .env.testing                # Environment variable template for test environment
+├── .env.production             # Environment variable template for production
+└── requirements.txt
+
+```
+
+## Docker Setup (recommended)
+
+```bash
+git clone https://github.com/Viicsr/bankercrm
+cd bankercrm
+cp .env.example .env        # fill in SECRET_KEY at minimum
+make up                     # starts app + PostgreSQL
+```
+
+The app is available at http://localhost:8000  
+Swagger UI at http://localhost:8000/docs
+
+### Useful commands
+
+```bash
+make help          # list all available commands
+make logs          # stream logs in real time
+make test          # run tests against SQLite (fast)
+make test-postgres # run tests against real PostgreSQL (required before merge)
+make down          # stop containers
+make down-v        # stop containers and delete volumes (database reset)
 ```
 
 ## Getting Started
@@ -140,11 +171,12 @@ bankercrm/
 - Python 3.12
 - Docker Desktop
 - Bruno (optional, for API testing)
+- Make
 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/vicsr/bankercrm.git
+git clone https://github.com/Viicsr/bankercrm
 cd bankercrm
 ```
 
@@ -201,17 +233,17 @@ Interactive docs: `http://localhost:8000/docs`
 
 ## Environment Variables
 
-| Variable | Description | Example |
-|---|---|---|
-| `APP_ENV` | Environment name — controls log format and HSTS | `development` |
-| `APP_NAME` | Application name — included in every log entry | `BankCRM` |
-| `APP_VERSION` | Application version | `0.1.0` |
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql+asyncpg://user:pass@localhost:5432/db` |
-| `SECRET_KEY` | JWT signing key (generate with secrets.token_hex(32)) | `a3f9...` |
-| `ALGORITHM` | JWT algorithm | `HS256` |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | Access token TTL | `30` |
-| `REFRESH_TOKEN_EXPIRE_DAYS` | Refresh token TTL | `7` |
-| `ALLOWED_ORIGINS` | Comma-separated list of allowed CORS origins | `http://localhost:3000,http://localhost:5173` |
+| Variable | Description | Example |Required |
+|---|---|---|---|
+| `APP_ENV` | Environment name — controls log format and HSTS | `development` | ✅ |
+| `APP_NAME` | Application name — included in every log entry | `BankCRM` | ❌ |
+| `APP_VERSION` | Application version | `0.1.0` | ❌ |
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql+asyncpg://user:pass@localhost:5432/db` | ✅ |
+| `SECRET_KEY` | JWT signing key (generate with secrets.token_hex(32)) | `a3f9...` | ✅ |
+| `ALGORITHM` | JWT algorithm | `HS256` | ❌ |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Access token TTL | `30` | ❌ |
+| `REFRESH_TOKEN_EXPIRE_DAYS` | Refresh token TTL | `7` | ❌ |
+| `ALLOWED_ORIGINS` | Comma-separated list of allowed CORS origins | `http://localhost:3000,http://localhost:5173` | ✅ prod|
 
 ## Authentication
 
@@ -457,68 +489,13 @@ Response shape:
 ## Running Tests
 
 ```bash
-pytest tests/ -v --cov=app
+make test          # SQLite — fast, no Docker required
+make test-postgres # real PostgreSQL — required before merging to main
 ```
 
-Tests use SQLite in-memory — no Docker required.
-
-Expected output:
-```
-tests/test_acounts.py::test_create_account PASSED
-tests/test_acounts.py::test_create_account_negative_balance PASSED
-tests/test_acounts.py::test_create_account_duplicate_number PASSED
-tests/test_acounts.py::test_create_account_nonexistent_client PASSED
-tests/test_acounts.py::test_get_account PASSED
-tests/test_acounts.py::test_get_client_with_accounts PASSED
-tests/test_acounts.py::test_list_clients_paginated PASSED
-tests/test_acounts.py::test_list_clients_page_size_limit PASSED
-tests/test_acounts.py::test_update_client PASSED
-tests/test_auth.py::test_register_user PASSED
-tests/test_auth.py::test_register_duplicate_email PASSED
-tests/test_auth.py::test_login_success PASSED
-tests/test_auth.py::test_login_wrong_password PASSED                                                                                       
-tests/test_auth.py::test_login_nonexistent_email PASSED
-tests/test_auth.py::test_protected_endpoint_without_token PASSED
-tests/test_auth.py::test_protected_endpoint_with_invalid_token PASSED
-tests/test_auth.py::test_admin_can_create_client PASSED
-tests/test_auth.py::test_readonly_cannot_create_client PASSED
-tests/test_auth.py::test_readonly_can_read_clients PASSED
-tests/test_auth.py::test_refresh_token PASSED
-tests/test_auth.py::test_refresh_with_access_token_fails PASSED
-tests/test_client.py::test_create_client PASSED
-tests/test_client.py::test_create_client_duplicate_email PASSED
-tests/test_client.py::test_get_client PASSED
-tests/test_client.py::test_get_client_not_found PASSED
-tests/test_errors.py::test_404_returns_standard_format PASSED
-tests/test_errors.py::test_409_on_duplicate_email PASSED
-tests/test_errors.py::test_422_validation_error_format PASSED
-tests/test_errors.py::test_401_returns_standard_format PASSED
-tests/test_errors.py::test_403_returns_standard_format PASSED
-tests/test_errors.py::test_invalid_path_returns_404 PASSED
-tests/test_health.py::test_health_check_ok PASSED
-tests/test_health.py::test_health_check_db_unreachable PASSED
-tests/test_middleware.py::test_request_id_header_present PASSED
-tests/test_middleware.py::test_process_time_header_present PASSED
-tests/test_middleware.py::test_security_headers_present PASSED
-tests/test_middleware.py::test_each_request_has_unique_request_id PASSED
-tests/test_middleware.py::test_error_response_includes_request_id PASSED
-tests/test_services.py::test_create_client_duplicate_raises_conflict PASSED
-tests/test_services.py::test_get_client_not_found_raises PASSED
-tests/test_services.py::test_update_client_not_found_raises PASSED
-tests/test_services.py::test_list_clients_inactive_included PASSED
-tests/test_services.py::test_get_client_with_accounts_not_found PASSED
-tests/test_services.py::test_create_account_duplicate_raises_conflict PASSED
-tests/test_services.py::test_get_account_not_found_raises PASSED
-tests/test_services.py::test_get_client_or_raise_inactive_client PASSED
-tests/test_services.py::test_create_user_duplicate_raises_conflict PASSED
-tests/test_services.py::test_authenticate_wrong_password_raises PASSED
-tests/test_services.py::test_authenticate_inactive_user_raises PASSED
-tests/test_services.py::test_refresh_tokens_expired_raises PASSED
-tests/test_services.py::test_refresh_tokens_wrong_type_raises PASSED
-tests/test_services.py::test_refresh_tokens_user_not_found_raises PASSED
-
-52 passed in 10.76s, coverage 89.69%
-```
+Tests use SQLite by default for speed. `make test-postgres` and CI both run
+against real PostgreSQL to catch driver-specific behaviour differences
+(type strictness, constraint enforcement, asyncpg event loop handling).
 
 ## CI/CD Pipeline
 
@@ -527,7 +504,7 @@ Every push to `main` or `develop` runs three jobs in sequence:
 | Job | What it does | Fails if |
 |---|---|---|
 | **Lint** | `ruff check` + `ruff format --check` | Any style violation or unused import |
-| **Test** | `pytest` with SQLite in-memory | Any test fails or coverage < 80% |
+| **Test** | `pytest` with PostgreSQL service container | Any test fails or coverage < 80% |
 | **Build** | Docker multi-stage build | Image doesn't build cleanly |
 
 `test` only runs if `lint` passes. `build` only runs if `test` passes.
@@ -605,11 +582,17 @@ The `/health` endpoint uses `asyncio.wait_for` with a 5-second timeout to detect
 - **Integration:** GitHub Actions runs natively inside the repository — no external accounts, no webhook configuration, no OAuth setup. The workflow file lives alongside the code and is versioned with it.
 - **Ecosystem:** The GitHub Actions marketplace provides first-party actions for the exact tools used in this pipeline (`actions/checkout`, `docker/build-push-action`, `codecov/codecov-action`), maintained by the respective tool owners.
 
+### ADR-013: docker-compose.override.yml for development configuration
+
+**Context:** The base `docker-compose.yml` must work unchanged in CI and production.  
+**Decision:** Development-specific configuration (hot reload via `--reload`, source code mounted as volume, port 5432 exposed to host for DBeaver/psql access) is isolated in `docker-compose.override.yml`, which Docker Compose loads automatically in local environments.  
+**Alternative considered:** A single `docker-compose.yml` with profiles or environment-based conditionals.  
+**Trade-off:** Two files instead of one, but each has a single clear responsibility. The override never reaches CI or production — both specify `-f docker-compose.yml` explicitly.
+
 ## Daily Startup
 
 ```bash
-docker start bankercrm-db
-cd ~/Projects/bankercrm
-source .venv/bin/activate
-uvicorn app.main:app --reload
+make up      # start app + database with hot reload
+make logs    # follow logs in a separate terminal
+make down    # stop everything when done
 ```
