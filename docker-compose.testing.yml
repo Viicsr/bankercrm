@@ -1,0 +1,17 @@
+services:
+  db-test:
+    image: postgres:16-alpine
+    container_name: bankercrm-db-test
+    environment:
+      POSTGRES_USER: vicsr
+      POSTGRES_PASSWORD: testpass
+      POSTGRES_DB: bankercrm_test
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data  # en memoria — se borra al parar.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vicsr -d bankercrm_test"]
+      interval: 5s
+      timeout: 3s
+      retries: 5

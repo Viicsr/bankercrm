@@ -1,6 +1,8 @@
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from app.core.config import settings
+
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Añade security headers estándar a todas las respuestas."""
@@ -15,7 +17,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
 
         # Solo en producción — en dev puede bloquear Swagger UI
-        if request.app.state.settings.APP_ENV == "production":
+        if settings.APP_ENV == "production":
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 
         return response

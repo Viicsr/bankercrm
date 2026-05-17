@@ -4,8 +4,8 @@ from app.core.database import get_db
 from app.main import app
 
 
-def test_health_check_ok(client):
-    response = client.get("/health")
+async def test_health_check_ok(client):
+    response = await client.get("/health")
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "ok"
@@ -14,7 +14,7 @@ def test_health_check_ok(client):
     assert "environment" in data
 
 
-def test_health_check_db_unreachable(client):
+async def test_health_check_db_unreachable(client):
     async def broken_get_db():
         mock_session = AsyncMock()
         mock_session.execute.side_effect = Exception("DB unreachable")
@@ -22,7 +22,7 @@ def test_health_check_db_unreachable(client):
 
     app.dependency_overrides[get_db] = broken_get_db
     try:
-        response = client.get("/health")
+        response = await client.get("/health")
         assert response.status_code == 503
         assert response.json()["db"] == "unreachable"
     finally:

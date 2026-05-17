@@ -11,6 +11,8 @@ test.db
 
 # Variables de entorno
 .env
+.env.testing
+.env.production
 
 # macOS
 .DS_Store
