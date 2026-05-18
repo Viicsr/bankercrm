@@ -16,11 +16,27 @@ router = APIRouter(prefix="/accounts", tags=["Accounts"])
     "/",
     response_model=AccountResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Create account",
+    description="""
+Create a new bank account linked to an existing client.
+
+Supply the target `client_id` as a query parameter. The client must exist
+and be **active** — creating an account for a deactivated client returns **404**.
+
+The `account_number` must be unique across the entire system.
+If it already exists, the API returns **409 Conflict**.
+
+Requires `admin` or `analyst` role.
+    """,
     responses={
-        404: {"model": ErrorResponse, "description": "Client not found"},
-        409: {"model": ErrorResponse, "description": "Account already exists"},
-        401: {"model": ErrorResponse, "description": "Not authenticated"},
-        403: {"model": ErrorResponse, "description": "Insufficient permissions"},
+        201: {"description": "Account created successfully"},
+        404: {"model": ErrorResponse, "description": "Client not found or inactive"},
+        409: {"model": ErrorResponse, "description": "Account number already exists"},
+        401: {"model": ErrorResponse, "description": "Authentication required"},
+        403: {
+            "model": ErrorResponse,
+            "description": "Insufficient permissions — admin or analyst required",
+        },
     },
 )
 async def create_account(
@@ -36,10 +52,17 @@ async def create_account(
 @router.get(
     "/{account_id}",
     response_model=AccountResponse,
+    summary="Get account by ID",
+    description="""
+Return the details of a specific bank account.
+
+Accessible by any authenticated user regardless of role.
+Returns **404** if the account does not exist.
+    """,
     responses={
+        200: {"description": "Account found"},
         404: {"model": ErrorResponse, "description": "Account not found"},
-        401: {"model": ErrorResponse, "description": "Not authenticated"},
-        403: {"model": ErrorResponse, "description": "Insufficient permissions"},
+        401: {"model": ErrorResponse, "description": "Authentication required"},
     },
 )
 async def get_account(

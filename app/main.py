@@ -28,7 +28,7 @@ from app.middleware.security import SecurityHeadersMiddleware
 # Antes de crear la instancia de FastAPI
 setup_logging()
 
-logger = logging.getLogger(__name__)  # logging.getLogger(__name__) i
+logger = logging.getLogger(__name__)
 
 
 # Contexto de vida de la aplicación
@@ -41,17 +41,110 @@ async def lifespan(app: FastAPI):
     logger.info("Database disconnected")
 
 
-# Creación de la aplicación FastAPI
+openapi_tags = [
+    {
+        "name": "Auth",
+        "description": "User registration, login, and token refresh endpoints.",
+    },
+    {
+        "name": "Clients",
+        "description": "Client management endpoints with RBAC protection.",
+    },
+    {
+        "name": "Accounts",
+        "description": "Bank account management endpoints linked to clients.",
+    },
+    {
+        "name": "System",
+        "description": "Operational endpoints such as health checks.",
+    },
+]
+
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    docs_url="/docs" if settings.APP_ENV == "development" else None,
+    description="""
+## Banking Customer Relationship Manager
+
+REST API for managing banking clients and accounts.
+Built with **FastAPI**, **PostgreSQL**, and **JWT authentication with RBAC**.
+
+---
+
+### Quick start
+
+1. **Register** — `POST /api/v1/auth/register`
+2. **Login** — `POST /api/v1/auth/login` → copy the `access_token`
+3. Click **Authorize** at the top of this page and enter: `Bearer <your_token>`
+
+All protected endpoints return **401** if the token is missing or expired,
+and **403** if your role does not have permission.
+
+---
+
+### Roles
+
+| Role | Permissions |
+|---|---|
+| `admin` | Full read + write access |
+| `analyst` | Read + create clients and accounts |
+| `read_only` | Read only |
+
+---
+
+### Standard error format
+
+Every error response follows this structure:
+
+```json
+{
+  "error": "NotFoundError",
+  "detail": "Client '42' not found",
+  "path": "/api/v1/clients/42",
+  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+Validation errors (422) additionally include an `errors` array with per-field details.
+
+---
+
+### Correlation IDs
+
+Every request receives a unique `X-Request-ID` header in the response.
+The same ID appears in the `request_id` field of any error body.
+Use it to cross-reference logs when reporting issues.
+""",
+    docs_url="/docs" if settings.APP_ENV != "production" else None,
+    redoc_url="/redoc" if settings.APP_ENV != "production" else None,
+    openapi_tags=openapi_tags,
+    contact={
+        "name": "Victor Santos",
+        "url": "https://github.com/Viicsr",
+    },
+    license_info={
+        "name": "MIT",
+    },
     lifespan=lifespan,
 )
 
 
 # Endpoint de salud de la aplicación
-@app.get("/health")
+@app.get(
+    "/health",
+    tags=["System"],
+    summary="Health check",
+    description=(
+        "Returns the operational status of the API and its database connection. "
+        "Used by Docker, Railway, and any load balancer health probe. "
+        "Returns **503** if the database is unreachable or times out after 5 seconds. "
+        "Does **not** require authentication."
+    ),
+    responses={
+        200: {"description": "API and database are healthy"},
+        503: {"description": "Database unreachable or timed out"},
+    },
+)
 async def health_check(db: AsyncSession = Depends(get_db)):
     try:
         await asyncio.wait_for(db.execute(text("SELECT 1")), timeout=5.0)
