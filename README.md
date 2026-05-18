@@ -19,37 +19,7 @@ REST API for banking CRM built with FastAPI, SQLAlchemy 2.0, and PostgreSQL.
 | Container | Docker multi-stage |
 
 ## Architecture
-
-```
-┌──────────────────────────────────────────────────┐
-│                   FastAPI App                    │
-│                                                  │
-│  ┌─────────────────────────────────────────────┐ │
-│  │              Middleware Stack               │ │
-│  │  CorrelationId · RequestLogging · Security  │ │
-│  └─────────────────────┬───────────────────────┘ │
-│                        │                         │
-│  ┌──────────┐  ┌───────▼──────┐                  │
-│  │  Router  │→ │   Service    │                  │
-│  │ (HTTP)   │  │ (Business)   │                  │
-│  └──────────┘  └──────┬───────┘                  │
-│                       │                          │
-│  ┌────────────────────▼──────────────────────┐   │
-│  │             Security Layer                │   │
-│  │      JWT decode · RBAC · bcrypt           │   │
-│  └────────────────────┬──────────────────────┘   │
-│                       │                          │
-│               ┌───────▼───────┐                  │
-│               │  SQLAlchemy   │                  │
-│               │    (ORM)      │                  │
-│               └───────┬───────┘                  │
-└───────────────────────┼──────────────────────────┘
-                        │
-                ┌───────▼───────┐
-                │  PostgreSQL   │
-                │   (Docker)    │
-                └───────────────┘
-```
+![Architecture](docs/architecture.png)
 
 Each layer has a single responsibility:
 - **Router** — receives HTTP, validates parameters, delegates to the service. No try/except or error logic
