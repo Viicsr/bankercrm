@@ -1,0 +1,1510 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "BankCRM",
+    "description": "\n## Banking Customer Relationship Manager\n\nREST API for managing banking clients and accounts.\nBuilt with **FastAPI**, **PostgreSQL**, and **JWT authentication with RBAC**.\n\n---\n\n### Quick start\n\n1. **Register** — `POST /api/v1/auth/register`\n2. **Login** — `POST /api/v1/auth/login` → copy the `access_token`\n3. Click **Authorize** at the top of this page and enter: `Bearer <your_token>`\n\nAll protected endpoints return **401** if the token is missing or expired,\nand **403** if your role does not have permission.\n\n---\n\n### Roles\n\n| Role | Permissions |\n|---|---|\n| `admin` | Full read + write access |\n| `analyst` | Read + create clients and accounts |\n| `read_only` | Read only |\n\n---\n\n### Standard error format\n\nEvery error response follows this structure:\n\n```json\n{\n  \"error\": \"NotFoundError\",\n  \"detail\": \"Client '42' not found\",\n  \"path\": \"/api/v1/clients/42\",\n  \"request_id\": \"550e8400-e29b-41d4-a716-446655440000\"\n}\n```\n\nValidation errors (422) additionally include an `errors` array with per-field details.\n\n---\n\n### Correlation IDs\n\nEvery request receives a unique `X-Request-ID` header in the response.\nThe same ID appears in the `request_id` field of any error body.\nUse it to cross-reference logs when reporting issues.\n",
+    "contact": {
+      "name": "Victor Santos",
+      "url": "https://github.com/Viicsr"
+    },
+    "license": {
+      "name": "MIT"
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Health check",
+        "description": "Returns the operational status of the API and its database connection. Used by Docker, Railway, and any load balancer health probe. Returns **503** if the database is unreachable or times out after 5 seconds. Does **not** require authentication.",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "API and database are healthy",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "503": {
+            "description": "Database unreachable or timed out"
+          }
+        }
+      }
+    },
+    "/api/v1/clients/": {
+      "post": {
+        "tags": [
+          "Clients"
+        ],
+        "summary": "Create client",
+        "description": "Create a new client in the CRM.\n\nThe `email` must be unique — if a client with that email already exists,\nthe API returns **409 Conflict**.\n\nRequires `admin` or `analyst` role.",
+        "operationId": "create_client_api_v1_clients__post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Client created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Email already registered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions — admin or analyst required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error — invalid email or name too short",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Clients"
+        ],
+        "summary": "List clients",
+        "description": "Return a paginated list of clients.\n\nUse `only_active=false` to include deactivated clients in the results.\nPagination is controlled by `page` (1-based) and `size` (max 100 per page).\n\nAccessible by any authenticated user regardless of role.",
+        "operationId": "list_clients_api_v1_clients__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Page number (1-based).",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Page number (1-based)."
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Results per page. Maximum 100.",
+              "default": 20,
+              "title": "Size"
+            },
+            "description": "Results per page. Maximum 100."
+          },
+          {
+            "name": "only_active",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "If `true`, returns only active clients.",
+              "default": true,
+              "title": "Only Active"
+            },
+            "description": "If `true`, returns only active clients."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of clients",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_ClientResponse_"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/clients/{client_id}/accounts": {
+      "get": {
+        "tags": [
+          "Clients"
+        ],
+        "summary": "Get client with accounts",
+        "description": "Return a client and all their linked bank accounts.\n\nThis endpoint uses a single query with `selectinload` to fetch\nthe client and all associated accounts efficiently.\n\nAccessible by any authenticated user regardless of role.",
+        "operationId": "get_client_with_accounts_api_v1_clients__client_id__accounts_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Client Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Client with account list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientWithAccountsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Client not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/clients/{client_id}": {
+      "get": {
+        "tags": [
+          "Clients"
+        ],
+        "summary": "Get client by ID",
+        "description": "Return the details of a specific client.\n\nReturns **404** if no client exists with the given ID.\n\nAccessible by any authenticated user regardless of role.",
+        "operationId": "get_client_api_v1_clients__client_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Client Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Client found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Client not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Clients"
+        ],
+        "summary": "Update client",
+        "description": "Partially update a client's data.\n\nAll fields are optional — only the fields included in the request body are updated.\nIf `email` is changed, the new value must not already exist in the system.\n\nSetting `is_active` to `false` deactivates the client without deleting any data\nor their associated accounts.\n\nRequires `admin` or `analyst` role.",
+        "operationId": "update_client_api_v1_clients__client_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Client Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Client updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Client not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Email already in use by another client",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions — admin or analyst required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/": {
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Create account",
+        "description": "Create a new bank account linked to an existing client.\n\nSupply the target `client_id` as a query parameter. The client must exist\nand be **active** — creating an account for a deactivated client returns **404**.\n\nThe `account_number` must be unique across the entire system.\nIf it already exists, the API returns **409 Conflict**.\n\nRequires `admin` or `analyst` role.",
+        "operationId": "create_account_api_v1_accounts__post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Client Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Account created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Client not found or inactive",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Account number already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions — admin or analyst required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{account_id}": {
+      "get": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Get account by ID",
+        "description": "Return the details of a specific bank account.\n\nAccessible by any authenticated user regardless of role.\nReturns **404** if the account does not exist.",
+        "operationId": "get_account_api_v1_accounts__account_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Account Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Account found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Account not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Register user",
+        "description": "Create a new user account.\n\nThe `email` must be unique — if it is already registered, the API returns **409 Conflict**.\n\nThe `role` defaults to `read_only` if not provided. Only supply `admin` or `analyst`\nwhen explicitly granting elevated access.\n\nPasswords are stored as **bcrypt hashes** — never in plain text.",
+        "operationId": "register_api_v1_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserRegister"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "User registered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Email already registered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error — invalid email or password too short",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Login",
+        "description": "Authenticate with email and password using the OAuth2 password flow.\n\nOn success, returns:\n- `access_token` — short-lived JWT (30 min). Use it in the `Authorization: Bearer <token>` header.\n- `refresh_token` — long-lived token (7 days). Use it to renew the access token without re-login.\n\nReturns **401** if the credentials are invalid or the user is deactivated.",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_login_api_v1_auth_login_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful — tokens returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials or inactive user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Refresh access token",
+        "description": "Exchange a valid `refresh_token` for a new `access_token`.\n\nThe refresh token is **rotated on every call** — the previous token is immediately\ninvalidated and a new one is returned. Store the new `refresh_token` from the response.\n\nReturns **401** if the token is expired, malformed, or has already been used.",
+        "operationId": "refresh_token_api_v1_auth_refresh_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Tokens refreshed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Refresh token invalid or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AccountCreate": {
+        "properties": {
+          "account_number": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 4,
+            "title": "Account Number",
+            "description": "Unique account number. Stored in uppercase. Alphanumeric characters only.",
+            "examples": [
+              "ES12-0049-0001"
+            ]
+          },
+          "account_type": {
+            "$ref": "#/components/schemas/AccountType",
+            "description": "Account type. Must be one of the values defined in the `AccountType` enum.",
+            "examples": [
+              "checking"
+            ]
+          },
+          "balance": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              }
+            ],
+            "title": "Balance",
+            "description": "Initial balance in EUR. Must be zero or positive. Cannot be negative at creation time.",
+            "default": "0.00",
+            "examples": [
+              "0.00"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "account_number",
+          "account_type"
+        ],
+        "title": "AccountCreate"
+      },
+      "AccountResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "Auto-generated unique account ID.",
+            "examples": [
+              1
+            ]
+          },
+          "client_id": {
+            "type": "integer",
+            "title": "Client Id",
+            "description": "ID of the client this account belongs to.",
+            "examples": [
+              42
+            ]
+          },
+          "account_number": {
+            "type": "string",
+            "title": "Account Number",
+            "description": "Unique account number, stored in uppercase.",
+            "examples": [
+              "ES12-0049-0001"
+            ]
+          },
+          "account_type": {
+            "$ref": "#/components/schemas/AccountType",
+            "description": "Account type.",
+            "examples": [
+              "checking"
+            ]
+          },
+          "balance": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Balance",
+            "description": "Current balance in EUR.",
+            "examples": [
+              "2500.00"
+            ]
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "description": "`false` if the account has been deactivated."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "UTC timestamp of account creation."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "client_id",
+          "account_number",
+          "account_type",
+          "balance",
+          "is_active",
+          "created_at"
+        ],
+        "title": "AccountResponse"
+      },
+      "AccountType": {
+        "type": "string",
+        "enum": [
+          "checking",
+          "savings",
+          "investment"
+        ],
+        "title": "AccountType"
+      },
+      "Body_login_api_v1_auth_login_post": {
+        "properties": {
+          "grant_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^password$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grant Type"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "title": "Password"
+          },
+          "scope": {
+            "type": "string",
+            "title": "Scope",
+            "default": ""
+          },
+          "client_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Id"
+          },
+          "client_secret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "format": "password",
+            "title": "Client Secret"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "Body_login_api_v1_auth_login_post"
+      },
+      "ClientCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Name",
+            "description": "Client full name.",
+            "examples": [
+              "María García López"
+            ]
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email",
+            "description": "Client email address. Used as the unique identifier — two clients cannot share the same email.",
+            "examples": [
+              "maria.garcia@banco.es"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "email"
+        ],
+        "title": "ClientCreate"
+      },
+      "ClientResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "Auto-generated unique client ID.",
+            "examples": [
+              1
+            ]
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "examples": [
+              "María García López"
+            ]
+          },
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "examples": [
+              "maria.garcia@banco.es"
+            ]
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "description": "`false` if the client has been deactivated."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "UTC timestamp of client creation."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "email",
+          "is_active",
+          "created_at"
+        ],
+        "title": "ClientResponse"
+      },
+      "ClientUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "Updated client name.",
+            "examples": [
+              "María García"
+            ]
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email",
+            "description": "Updated email address. Must not already exist in the system.",
+            "examples": [
+              "m.garcia@banco.es"
+            ]
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active",
+            "description": "Client status. Setting to `false` deactivates the client without deleting any data or linked accounts."
+          }
+        },
+        "type": "object",
+        "title": "ClientUpdate"
+      },
+      "ClientWithAccountsResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "Auto-generated unique client ID.",
+            "examples": [
+              1
+            ]
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "examples": [
+              "María García López"
+            ]
+          },
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "examples": [
+              "maria.garcia@banco.es"
+            ]
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "description": "`false` if the client has been deactivated."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "UTC timestamp of client creation."
+          },
+          "accounts": {
+            "items": {
+              "$ref": "#/components/schemas/AccountResponse"
+            },
+            "type": "array",
+            "title": "Accounts",
+            "description": "All bank accounts linked to this client.",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "email",
+          "is_active",
+          "created_at"
+        ],
+        "title": "ClientWithAccountsResponse"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "error": {
+            "type": "string",
+            "title": "Error",
+            "description": "Exception class name. Machine-readable error type.",
+            "examples": [
+              "NotFoundError"
+            ]
+          },
+          "detail": {
+            "type": "string",
+            "title": "Detail",
+            "description": "Human-readable description of this specific occurrence.",
+            "examples": [
+              "Client '42' not found"
+            ]
+          },
+          "path": {
+            "type": "string",
+            "title": "Path",
+            "description": "Endpoint path that generated the error.",
+            "examples": [
+              "/api/v1/clients/42"
+            ]
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id",
+            "description": "Correlation ID from the `X-Request-ID` response header. Use this value to locate the corresponding log entry.",
+            "examples": [
+              "550e8400-e29b-41d4-a716-446655440000"
+            ]
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FieldError"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors",
+            "description": "Per-field validation errors. Present only on 422 responses."
+          }
+        },
+        "type": "object",
+        "required": [
+          "error",
+          "detail",
+          "path"
+        ],
+        "title": "ErrorResponse"
+      },
+      "FieldError": {
+        "properties": {
+          "field": {
+            "type": "string",
+            "title": "Field",
+            "description": "Request field that failed validation (dot-notation for nested fields).",
+            "examples": [
+              "body.email"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Human-readable description of the validation failure.",
+            "examples": [
+              "value is not a valid email address"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "field",
+          "message"
+        ],
+        "title": "FieldError"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "PaginatedResponse_ClientResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ClientResponse"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "List of results for the current page."
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Total number of records matching the query across all pages.",
+            "examples": [
+              150
+            ]
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "description": "Current page number (1-based).",
+            "examples": [
+              1
+            ]
+          },
+          "size": {
+            "type": "integer",
+            "title": "Size",
+            "description": "Number of results per page.",
+            "examples": [
+              20
+            ]
+          },
+          "pages": {
+            "type": "integer",
+            "title": "Pages",
+            "description": "Total number of pages given the current `size`.",
+            "examples": [
+              8
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "size",
+          "pages"
+        ],
+        "title": "PaginatedResponse[ClientResponse]"
+      },
+      "RefreshRequest": {
+        "properties": {
+          "refresh_token": {
+            "type": "string",
+            "title": "Refresh Token",
+            "description": "The refresh token obtained during login or a previous refresh call. Rotated on every use — store the new token returned in the response.",
+            "examples": [
+              "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "refresh_token"
+        ],
+        "title": "RefreshRequest"
+      },
+      "TokenResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token",
+            "description": "Short-lived JWT for authenticating requests. Include in the `Authorization: Bearer <token>` header. Expires after 30 minutes.",
+            "examples": [
+              "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            ]
+          },
+          "refresh_token": {
+            "type": "string",
+            "title": "Refresh Token",
+            "description": "Long-lived token used to obtain a new `access_token` without re-login. Valid for 7 days. Rotated on every use — the previous token is invalidated immediately.",
+            "examples": [
+              "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            ]
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "description": "Token scheme. Always `bearer`.",
+            "default": "bearer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token",
+          "refresh_token"
+        ],
+        "title": "TokenResponse"
+      },
+      "UserRegister": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email",
+            "description": "User email address. Used as the login identifier. Must be unique.",
+            "examples": [
+              "victor@bankercrm.dev"
+            ]
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "title": "Password",
+            "description": "User password. Stored as a bcrypt hash — never in plain text. Minimum 8 characters.",
+            "examples": [
+              "Secure1234!"
+            ]
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole",
+            "description": "Role assigned to the user. Defaults to `read_only` if not specified. Use `admin` for full access or `analyst` for write access to clients and accounts.",
+            "default": "read_only",
+            "examples": [
+              "read_only"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "UserRegister"
+      },
+      "UserResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "Auto-generated unique user ID.",
+            "examples": [
+              1
+            ]
+          },
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "examples": [
+              "victor@bankercrm.dev"
+            ]
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole",
+            "description": "Role assigned to this user.",
+            "examples": [
+              "admin"
+            ]
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "description": "`false` if the user has been deactivated."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "role",
+          "is_active"
+        ],
+        "title": "UserResponse"
+      },
+      "UserRole": {
+        "type": "string",
+        "enum": [
+          "admin",
+          "analyst",
+          "read_only"
+        ],
+        "title": "UserRole"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "OAuth2PasswordBearer": {
+        "type": "oauth2",
+        "flows": {
+          "password": {
+            "scopes": {},
+            "tokenUrl": "/api/v1/auth/login"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "User registration, login, and token refresh endpoints."
+    },
+    {
+      "name": "Clients",
+      "description": "Client management endpoints with RBAC protection."
+    },
+    {
+      "name": "Accounts",
+      "description": "Bank account management endpoints linked to clients."
+    },
+    {
+      "name": "System",
+      "description": "Operational endpoints such as health checks."
+    }
+  ]
+}
