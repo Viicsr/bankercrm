@@ -3,7 +3,20 @@
 [![CI Pipeline](https://github.com/Viicsr/bankercrm/actions/workflows/ci.yml/badge.svg)](https://github.com/Viicsr/bankercrm/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/Viicsr/bankercrm/branch/main/graph/badge.svg)](https://codecov.io/gh/Viicsr/bankercrm)
 
-REST API for banking CRM built with FastAPI, SQLAlchemy 2.0, and PostgreSQL.
+Production-grade REST API for banking customer and account management.
+Built with FastAPI async, JWT RBAC with three roles, structured JSON logging,
+CI/CD pipeline with ≥80% test coverage, and Docker multi-stage deployment.
+
+## Why this stack
+
+| Decision | Alternative considered | Reason |
+|---|---|---|
+| FastAPI async | Django REST Framework | I/O-bound workload — async connection pool handles more concurrency with fewer resources |
+| SQLAlchemy 2.0 async | Tortoise ORM | Ecosystem maturity, Alembic support, type-safe `Mapped[]` syntax |
+| PyJWT | python-jose | python-jose has unpatched CVEs since 2023 and is no longer maintained |
+| Domain exceptions | `HTTPException` in services | Services are transport-agnostic — reusable in Celery workers or WebSocket handlers |
+| Ruff | flake8 + black + isort | Single binary, 10-100x faster, same rules, single config file |
+| Bruno | Postman | File-based storage — collection lives in Git, no account required |
 
 ## Stack
 
