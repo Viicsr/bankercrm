@@ -26,7 +26,9 @@
             "description": "API and database are healthy",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
               }
             }
           },
@@ -1146,6 +1148,38 @@
         ],
         "title": "ClientWithAccountsResponse"
       },
+      "DependencyHealth": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Dependency status: `ok`, `degraded`, or `unavailable`.",
+            "examples": [
+              "ok"
+            ]
+          },
+          "latency_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency Ms",
+            "description": "Round-trip latency in milliseconds. Null if the dependency did not respond.",
+            "examples": [
+              2.34
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "DependencyHealth"
+      },
       "ErrorResponse": {
         "properties": {
           "error": {
@@ -1249,6 +1283,50 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "`ok` when all dependencies are healthy, `degraded` otherwise.",
+            "examples": [
+              "ok"
+            ]
+          },
+          "version": {
+            "type": "string",
+            "title": "Version",
+            "description": "Running application version.",
+            "examples": [
+              "0.1.0"
+            ]
+          },
+          "environment": {
+            "type": "string",
+            "title": "Environment",
+            "description": "Active environment name.",
+            "examples": [
+              "development"
+            ]
+          },
+          "dependencies": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/DependencyHealth"
+            },
+            "type": "object",
+            "title": "Dependencies",
+            "description": "Health status of each external dependency, keyed by dependency name."
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "version",
+          "environment",
+          "dependencies"
+        ],
+        "title": "HealthResponse"
       },
       "PaginatedResponse_ClientResponse_": {
         "properties": {

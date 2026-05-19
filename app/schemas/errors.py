@@ -44,10 +44,23 @@ class ErrorResponse(BaseModel):
     )  # solo para errores de validación
 
 
+class DependencyHealth(BaseModel):
+    status: str = Field(
+        ...,
+        description="Dependency status: `ok`, `degraded`, or `unavailable`.",
+        examples=["ok"],
+    )
+    latency_ms: float | None = Field(
+        None,
+        description="Round-trip latency in milliseconds. Null if the dependency did not respond.",
+        examples=[2.34],
+    )
+
+
 class HealthResponse(BaseModel):
     status: str = Field(
         ...,
-        description="`ok` when all systems are healthy, `error` otherwise.",
+        description="`ok` when all dependencies are healthy, `degraded` otherwise.",
         examples=["ok"],
     )
     version: str = Field(
@@ -59,4 +72,8 @@ class HealthResponse(BaseModel):
         ...,
         description="Active environment name.",
         examples=["development"],
+    )
+    dependencies: dict[str, DependencyHealth] = Field(
+        ...,
+        description="Health status of each external dependency, keyed by dependency name.",
     )

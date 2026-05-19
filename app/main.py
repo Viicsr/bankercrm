@@ -1,20 +1,20 @@
 import asyncio
 import logging
 import re
+import time
 import uuid
 from contextlib import asynccontextmanager
 
 from asgi_correlation_id import CorrelationIdMiddleware
-from fastapi import Depends, FastAPI
+from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.routers import accounts, auth, clients
 from app.core.config import settings
-from app.core.database import engine, get_db
+from app.core.database import engine
 from app.core.error_handlers import (
     app_exception_handler,
     unhandled_exception_handler,
@@ -24,6 +24,7 @@ from app.core.exceptions import AppBaseException
 from app.core.logging_config import setup_logging
 from app.middleware.request_id import RequestLoggingMiddleware
 from app.middleware.security import SecurityHeadersMiddleware
+from app.schemas.errors import HealthResponse
 
 # Antes de crear la instancia de FastAPI
 setup_logging()
@@ -132,6 +133,7 @@ Use it to cross-reference logs when reporting issues.
 # Endpoint de salud de la aplicación
 @app.get(
     "/health",
+    response_model=HealthResponse,
     tags=["System"],
     summary="Health check",
     description=(
@@ -145,36 +147,40 @@ Use it to cross-reference logs when reporting issues.
         503: {"description": "Database unreachable or timed out"},
     },
 )
-async def health_check(db: AsyncSession = Depends(get_db)):
+async def health_check():
+    db_status = "ok"
+    db_latency_ms = None
+
     try:
-        await asyncio.wait_for(db.execute(text("SELECT 1")), timeout=5.0)
-        db_status = "connected"
+        start = time.perf_counter()
+        async with engine.begin() as conn:
+            await asyncio.wait_for(
+                conn.execute(text("SELECT 1")),
+                timeout=5.0,
+            )
+        db_latency_ms = round((time.perf_counter() - start) * 1000, 2)
     except TimeoutError:
-        return JSONResponse(
-            status_code=503,
-            content={
-                "status": "error",
-                "db": "timeout",
-                "version": settings.APP_VERSION,
-                "environment": settings.APP_ENV,
-            },
-        )
+        db_status = "unavailable"
     except Exception:
-        return JSONResponse(
-            status_code=503,
-            content={
-                "status": "error",
-                "db": "unreachable",
-                "version": settings.APP_VERSION,
-                "environment": settings.APP_ENV,
+        db_status = "degraded"
+
+    overall_status = "ok" if db_status == "ok" else "degraded"
+    http_status = 200 if overall_status == "ok" else 503
+
+    return JSONResponse(
+        status_code=http_status,
+        content={
+            "status": overall_status,
+            "version": settings.APP_VERSION,
+            "environment": settings.APP_ENV,
+            "dependencies": {
+                "database": {
+                    "status": db_status,
+                    "latency_ms": db_latency_ms,
+                }
             },
-        )
-    return {
-        "status": "ok",
-        "db": db_status,
-        "version": settings.APP_VERSION,
-        "environment": settings.APP_ENV,
-    }
+        },
+    )
 
 
 # Incluye el router de clientes en la aplicación
