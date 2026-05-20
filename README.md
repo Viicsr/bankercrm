@@ -572,6 +572,13 @@ The `/health` endpoint uses `asyncio.wait_for` with a 5-second timeout to detect
 **Alternative considered:** A single `docker-compose.yml` with profiles or environment-based conditionals.  
 **Trade-off:** Two files instead of one, but each has a single clear responsibility. The override never reaches CI or production — both specify `-f docker-compose.yml` explicitly.
 
+### ADR-014: Flat resource routes over nested routes for accounts
+
+**Decision:** `POST /api/v1/accounts?client_id={id}` instead of `POST /api/v1/clients/{id}/accounts`.
+**Reason:** Accounts are a first-class resource, they have their own ID and are accessed directly via `GET /accounts/{id}`. Nesting them under clients would imply they only exist in that context, which is not true.
+**Trade-off:** The relationship between client and account is less obvious from the URL alone. Mitigated by Swagger documentation.
+
+
 ## Daily Startup
 
 ```bash
