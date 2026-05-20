@@ -28,13 +28,6 @@ class AccountCreate(BaseModel):
         examples=[Decimal("0.00")],
     )
 
-    @field_validator("balance")
-    @classmethod
-    def balance_must_be_non_negative(cls, v: Decimal) -> Decimal:
-        if v < Decimal("0.00"):
-            raise ValueError("Balance cannot be negative")
-        return v
-
     @field_validator("account_number")
     @classmethod
     def account_number_format(cls, v: str) -> str:

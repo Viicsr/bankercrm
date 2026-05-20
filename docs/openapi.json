@@ -76,26 +76,12 @@
             "description": "Email already registered",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Insufficient permissions — admin or analyst required",
-            "content": {
-              "application/json": {
+                "example": {
+                  "error": "ConflictError",
+                  "detail": "A client with email 'maria.garcia@banco.es' already exists.",
+                  "path": "/api/v1/clients",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
                 }
@@ -103,9 +89,34 @@
             }
           },
           "422": {
-            "description": "Validation error — invalid email or name too short",
+            "description": "Validation error — invalid email or name too short"
+          },
+          "401": {
+            "description": "Authentication required",
             "content": {
               "application/json": {
+                "example": {
+                  "error": "AuthenticationError",
+                  "detail": "Authentication credentials were not provided or are invalid.",
+                  "path": "/api/v1/...",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "AuthorizationError",
+                  "detail": "Role 'read_only' is not allowed to perform this action.",
+                  "path": "/api/v1/...",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
                 }
@@ -182,6 +193,12 @@
             "description": "Authentication required",
             "content": {
               "application/json": {
+                "example": {
+                  "error": "AuthenticationError",
+                  "detail": "Authentication credentials were not provided or are invalid.",
+                  "path": "/api/v1/...",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
                 }
@@ -192,6 +209,12 @@
             "description": "Insufficient permissions",
             "content": {
               "application/json": {
+                "example": {
+                  "error": "AuthorizationError",
+                  "detail": "Role 'read_only' is not allowed to perform this action.",
+                  "path": "/api/v1/...",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
                 }
@@ -237,7 +260,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Client with account list",
+            "description": "Client found",
             "content": {
               "application/json": {
                 "schema": {
@@ -250,6 +273,12 @@
             "description": "Client not found",
             "content": {
               "application/json": {
+                "example": {
+                  "error": "NotFoundError",
+                  "detail": "Client '42' not found.",
+                  "path": "/api/v1/clients/42",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
                 }
@@ -260,6 +289,12 @@
             "description": "Authentication required",
             "content": {
               "application/json": {
+                "example": {
+                  "error": "AuthenticationError",
+                  "detail": "Authentication credentials were not provided or are invalid.",
+                  "path": "/api/v1/...",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
                 }
@@ -270,6 +305,12 @@
             "description": "Insufficient permissions",
             "content": {
               "application/json": {
+                "example": {
+                  "error": "AuthorizationError",
+                  "detail": "Role 'read_only' is not allowed to perform this action.",
+                  "path": "/api/v1/...",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
                 }
@@ -328,6 +369,12 @@
             "description": "Client not found",
             "content": {
               "application/json": {
+                "example": {
+                  "error": "NotFoundError",
+                  "detail": "Client '42' not found.",
+                  "path": "/api/v1/clients/42",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
                 }
@@ -338,6 +385,12 @@
             "description": "Authentication required",
             "content": {
               "application/json": {
+                "example": {
+                  "error": "AuthenticationError",
+                  "detail": "Authentication credentials were not provided or are invalid.",
+                  "path": "/api/v1/...",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
                 }
@@ -348,6 +401,12 @@
             "description": "Insufficient permissions",
             "content": {
               "application/json": {
+                "example": {
+                  "error": "AuthorizationError",
+                  "detail": "Role 'read_only' is not allowed to perform this action.",
+                  "path": "/api/v1/...",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
                 }
@@ -414,6 +473,12 @@
             "description": "Client not found",
             "content": {
               "application/json": {
+                "example": {
+                  "error": "NotFoundError",
+                  "detail": "Client '42' not found.",
+                  "path": "/api/v1/clients/42",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
                 }
@@ -424,26 +489,12 @@
             "description": "Email already in use by another client",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Insufficient permissions — admin or analyst required",
-            "content": {
-              "application/json": {
+                "example": {
+                  "error": "ConflictError",
+                  "detail": "A client with email 'maria.garcia@banco.es' already exists.",
+                  "path": "/api/v1/clients",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
                 }
@@ -452,6 +503,38 @@
           },
           "422": {
             "description": "Validation error — invalid email format or name too short"
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "AuthenticationError",
+                  "detail": "Authentication credentials were not provided or are invalid.",
+                  "path": "/api/v1/...",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "AuthorizationError",
+                  "detail": "Role 'read_only' is not allowed to perform this action.",
+                  "path": "/api/v1/...",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -505,6 +588,12 @@
             "description": "Client not found or inactive",
             "content": {
               "application/json": {
+                "example": {
+                  "error": "NotFoundError",
+                  "detail": "Client '7' not found or is inactive.",
+                  "path": "/api/v1/accounts",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
                 }
@@ -515,6 +604,12 @@
             "description": "Account number already exists",
             "content": {
               "application/json": {
+                "example": {
+                  "error": "ConflictError",
+                  "detail": "Account number 'ES9121000418450200051332' already exists.",
+                  "path": "/api/v1/accounts",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
                 }
@@ -525,6 +620,12 @@
             "description": "Authentication required",
             "content": {
               "application/json": {
+                "example": {
+                  "error": "AuthenticationError",
+                  "detail": "Authentication credentials were not provided or are invalid.",
+                  "path": "/api/v1/...",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
                 }
@@ -532,9 +633,15 @@
             }
           },
           "403": {
-            "description": "Insufficient permissions — admin or analyst required",
+            "description": "Insufficient permissions",
             "content": {
               "application/json": {
+                "example": {
+                  "error": "AuthorizationError",
+                  "detail": "Role 'read_only' is not allowed to perform this action.",
+                  "path": "/api/v1/...",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
                 }
@@ -593,6 +700,12 @@
             "description": "Account not found",
             "content": {
               "application/json": {
+                "example": {
+                  "error": "NotFoundError",
+                  "detail": "Account '15' not found.",
+                  "path": "/api/v1/accounts/15",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
                 }
@@ -603,6 +716,116 @@
             "description": "Authentication required",
             "content": {
               "application/json": {
+                "example": {
+                  "error": "AuthenticationError",
+                  "detail": "Authentication credentials were not provided or are invalid.",
+                  "path": "/api/v1/...",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Update account",
+        "description": "Update a bank account.\n\nAllows updating `is_active` and `balance` fields independently.\nOmitted fields are left unchanged.\n\nRequires `admin` or `analyst` role.",
+        "operationId": "update_account_api_v1_accounts__account_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Account Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Account updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Account not found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "NotFoundError",
+                  "detail": "Account '15' not found.",
+                  "path": "/api/v1/accounts/15",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "AuthenticationError",
+                  "detail": "Authentication credentials were not provided or are invalid.",
+                  "path": "/api/v1/...",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "AuthorizationError",
+                  "detail": "Role 'read_only' is not allowed to perform this action.",
+                  "path": "/api/v1/...",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
                 }
@@ -657,19 +880,18 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "ConflictError",
+                  "detail": "A user with email 'admin@banco.es' already exists.",
+                  "path": "/api/v1/auth/register",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
                 }
               }
             }
           },
           "422": {
-            "description": "Validation error — invalid email or password too short",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
+            "description": "Validation error — invalid email or password too short"
           }
         }
       }
@@ -709,6 +931,12 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "AuthenticationError",
+                  "detail": "Invalid email or password.",
+                  "path": "/api/v1/auth/login",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
                 }
               }
             }
@@ -761,6 +989,12 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "AuthenticationError",
+                  "detail": "Refresh token has expired or has already been used.",
+                  "path": "/api/v1/auth/refresh",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
                 }
               }
             }
@@ -900,6 +1134,44 @@
           "investment"
         ],
         "title": "AccountType"
+      },
+      "AccountUpdate": {
+        "properties": {
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active",
+            "description": "Account status. Setting to `false` deactivates the account without deleting any data."
+          },
+          "balance": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Balance",
+            "description": "Updated balance in EUR. Must be zero or positive.",
+            "examples": [
+              "1500.00"
+            ]
+          }
+        },
+        "type": "object",
+        "title": "AccountUpdate"
       },
       "Body_login_api_v1_auth_login_post": {
         "properties": {

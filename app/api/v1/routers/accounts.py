@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.v1.deps import get_current_user, require_roles
 from app.core.database import get_db
 from app.models.user import User, UserRole
-from app.schemas.account import AccountCreate, AccountResponse
+from app.schemas.account import AccountCreate, AccountResponse, AccountUpdate
 from app.schemas.error_examples import (
     ACCOUNT_404_CONTENT,
     ACCOUNT_NUMBER_409_CONTENT,
@@ -104,3 +104,35 @@ async def get_account(
 ):
     service = AccountService(db=db, client_service=ClientService(db=db))
     return await service.get_account(account_id)
+
+
+@router.patch(
+    "/{account_id}",
+    response_model=AccountResponse,
+    summary="Update account",
+    description="""
+Update a bank account.
+
+Allows updating `is_active` and `balance` fields independently.
+Omitted fields are left unchanged.
+
+Requires `admin` or `analyst` role.
+    """,
+    responses={
+        200: {"description": "Account updated successfully"},
+        404: {
+            "model": ErrorResponse,
+            "description": "Account not found",
+            "content": ACCOUNT_404_CONTENT,
+        },
+        **_auth_responses,
+    },
+)
+async def update_account(
+    account_id: int,
+    update_data: AccountUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.ANALYST)),
+):
+    service = AccountService(db=db, client_service=ClientService(db=db))
+    return await service.update_account(account_id, update_data)
