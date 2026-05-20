@@ -28,7 +28,7 @@ class AccountService:
     async def create_account(
         self, client_id: int, data: AccountCreate
     ) -> Account:  # funcion para crear una cuenta
-        await self.client_service.get_client(client_id)
+        await self._get_client_or_raise(client_id)
 
         existing = await self.db.execute(  # verificar si la cuenta ya existe
             select(Account).where(Account.account_number == data.account_number)

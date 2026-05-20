@@ -165,6 +165,9 @@ Requires `admin` or `analyst` role.
             "model": ErrorResponse,
             "description": "Insufficient permissions — admin or analyst required",
         },
+        422: {
+            "description": "Validation error — invalid email format or name too short",
+        },
     },
 )
 async def update_client(

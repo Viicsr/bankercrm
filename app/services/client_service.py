@@ -87,6 +87,17 @@ class ClientService:
         )
         client = await self.get_client(client_id)
         update_data = data.model_dump(exclude_unset=True)
+
+        if "email" in update_data:
+            existing = await self.db.execute(
+                select(Client).where(
+                    Client.email == update_data["email"],
+                    Client.id != client_id,
+                )
+            )
+            if existing.scalar_one_or_none():
+                raise ConflictError(f"Email {update_data['email']} already in use")
+
         for field, value in update_data.items():
             setattr(client, field, value)
         await self.db.commit()
