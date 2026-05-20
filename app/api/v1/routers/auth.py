@@ -5,6 +5,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import create_access_token, create_refresh_token
 from app.schemas.auth import RefreshRequest, TokenResponse, UserRegister, UserResponse
+from app.schemas.error_examples import (
+    AUTH_401_CREDENTIALS_CONTENT,
+    AUTH_401_TOKEN_CONTENT,
+    USER_EMAIL_409_CONTENT,
+)
 from app.schemas.errors import ErrorResponse
 from app.services.user_service import UserService
 
@@ -30,11 +35,12 @@ Passwords are stored as **bcrypt hashes** — never in plain text.
     """,
     responses={
         201: {"description": "User registered successfully"},
-        409: {"model": ErrorResponse, "description": "Email already registered"},
-        422: {
+        409: {
             "model": ErrorResponse,
-            "description": "Validation error — invalid email or password too short",
+            "description": "Email already registered",
+            "content": USER_EMAIL_409_CONTENT,
         },
+        422: {"description": "Validation error — invalid email or password too short"},
     },
 )
 async def register(data: UserRegister, db: AsyncSession = Depends(get_db)):
@@ -56,7 +62,11 @@ Returns **401** if the credentials are invalid or the user is deactivated.
     """,
     responses={
         200: {"description": "Login successful — tokens returned"},
-        401: {"model": ErrorResponse, "description": "Invalid credentials or inactive user"},
+        401: {
+            "model": ErrorResponse,
+            "description": "Invalid credentials or inactive user",
+            "content": AUTH_401_CREDENTIALS_CONTENT,
+        },
     },
 )
 async def login(
@@ -84,7 +94,11 @@ Returns **401** if the token is expired, malformed, or has already been used.
     """,
     responses={
         200: {"description": "Tokens refreshed successfully"},
-        401: {"model": ErrorResponse, "description": "Refresh token invalid or expired"},
+        401: {
+            "model": ErrorResponse,
+            "description": "Refresh token invalid or expired",
+            "content": AUTH_401_TOKEN_CONTENT,
+        },
     },
 )
 async def refresh_token(data: RefreshRequest, db: AsyncSession = Depends(get_db)):

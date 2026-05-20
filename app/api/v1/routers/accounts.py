@@ -5,11 +5,31 @@ from app.api.v1.deps import get_current_user, require_roles
 from app.core.database import get_db
 from app.models.user import User, UserRole
 from app.schemas.account import AccountCreate, AccountResponse
+from app.schemas.error_examples import (
+    ACCOUNT_404_CONTENT,
+    ACCOUNT_NUMBER_409_CONTENT,
+    AUTH_401_CONTENT,
+    AUTH_403_CONTENT,
+    CLIENT_FOR_ACCOUNT_404_CONTENT,
+)
 from app.schemas.errors import ErrorResponse
 from app.services.account_service import AccountService
 from app.services.client_service import ClientService
 
 router = APIRouter(prefix="/accounts", tags=["Accounts"])
+
+_auth_responses = {
+    401: {
+        "model": ErrorResponse,
+        "description": "Authentication required",
+        "content": AUTH_401_CONTENT,
+    },
+    403: {
+        "model": ErrorResponse,
+        "description": "Insufficient permissions",
+        "content": AUTH_403_CONTENT,
+    },
+}
 
 
 @router.post(
@@ -30,13 +50,17 @@ Requires `admin` or `analyst` role.
     """,
     responses={
         201: {"description": "Account created successfully"},
-        404: {"model": ErrorResponse, "description": "Client not found or inactive"},
-        409: {"model": ErrorResponse, "description": "Account number already exists"},
-        401: {"model": ErrorResponse, "description": "Authentication required"},
-        403: {
+        404: {
             "model": ErrorResponse,
-            "description": "Insufficient permissions — admin or analyst required",
+            "description": "Client not found or inactive",
+            "content": CLIENT_FOR_ACCOUNT_404_CONTENT,
         },
+        409: {
+            "model": ErrorResponse,
+            "description": "Account number already exists",
+            "content": ACCOUNT_NUMBER_409_CONTENT,
+        },
+        **_auth_responses,
     },
 )
 async def create_account(
@@ -61,8 +85,16 @@ Returns **404** if the account does not exist.
     """,
     responses={
         200: {"description": "Account found"},
-        404: {"model": ErrorResponse, "description": "Account not found"},
-        401: {"model": ErrorResponse, "description": "Authentication required"},
+        404: {
+            "model": ErrorResponse,
+            "description": "Account not found",
+            "content": ACCOUNT_404_CONTENT,
+        },
+        401: {
+            "model": ErrorResponse,
+            "description": "Authentication required",
+            "content": AUTH_401_CONTENT,
+        },
     },
 )
 async def get_account(

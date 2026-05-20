@@ -13,14 +13,29 @@ from app.schemas.client import (
     ClientWithAccountsResponse,
 )
 from app.schemas.common import PaginatedResponse
+from app.schemas.error_examples import (
+    AUTH_401_CONTENT,
+    AUTH_403_CONTENT,
+    CLIENT_404_CONTENT,
+    CLIENT_EMAIL_409_CONTENT,
+)
 from app.schemas.errors import ErrorResponse
 from app.services.client_service import ClientService
 
 router = APIRouter(prefix="/clients", tags=["Clients"])
 
+
 _auth_responses = {
-    401: {"model": ErrorResponse, "description": "Authentication required"},
-    403: {"model": ErrorResponse, "description": "Insufficient permissions"},
+    401: {
+        "model": ErrorResponse,
+        "description": "Authentication required",
+        "content": AUTH_401_CONTENT,
+    },
+    403: {
+        "model": ErrorResponse,
+        "description": "Insufficient permissions",
+        "content": AUTH_403_CONTENT,
+    },
 }
 
 
@@ -39,16 +54,13 @@ Requires `admin` or `analyst` role.
     """,
     responses={
         201: {"description": "Client created successfully"},
-        409: {"model": ErrorResponse, "description": "Email already registered"},
-        401: {"model": ErrorResponse, "description": "Authentication required"},
-        403: {
+        409: {
             "model": ErrorResponse,
-            "description": "Insufficient permissions — admin or analyst required",
+            "description": "Email already registered",
+            "content": CLIENT_EMAIL_409_CONTENT,
         },
-        422: {
-            "model": ErrorResponse,
-            "description": "Validation error — invalid email or name too short",
-        },
+        422: {"description": "Validation error — invalid email or name too short"},
+        **_auth_responses,
     },
 )
 async def create_client(
@@ -101,8 +113,12 @@ the client and all associated accounts efficiently.
 Accessible by any authenticated user regardless of role.
     """,
     responses={
-        200: {"description": "Client with account list"},
-        404: {"model": ErrorResponse, "description": "Client not found"},
+        200: {"description": "Client found"},
+        404: {
+            "model": ErrorResponse,
+            "description": "Client not found",
+            "content": CLIENT_404_CONTENT,
+        },
         **_auth_responses,
     },
 )
@@ -128,7 +144,11 @@ Accessible by any authenticated user regardless of role.
     """,
     responses={
         200: {"description": "Client found"},
-        404: {"model": ErrorResponse, "description": "Client not found"},
+        404: {
+            "model": ErrorResponse,
+            "description": "Client not found",
+            "content": CLIENT_404_CONTENT,
+        },
         **_auth_responses,
     },
 )
@@ -158,16 +178,18 @@ Requires `admin` or `analyst` role.
     """,
     responses={
         200: {"description": "Client updated successfully"},
-        404: {"model": ErrorResponse, "description": "Client not found"},
-        409: {"model": ErrorResponse, "description": "Email already in use by another client"},
-        401: {"model": ErrorResponse, "description": "Authentication required"},
-        403: {
+        404: {
             "model": ErrorResponse,
-            "description": "Insufficient permissions — admin or analyst required",
+            "description": "Client not found",
+            "content": CLIENT_404_CONTENT,
         },
-        422: {
-            "description": "Validation error — invalid email format or name too short",
+        409: {
+            "model": ErrorResponse,
+            "description": "Email already in use by another client",
+            "content": CLIENT_EMAIL_409_CONTENT,
         },
+        422: {"description": "Validation error — invalid email format or name too short"},
+        **_auth_responses,
     },
 )
 async def update_client(
