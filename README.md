@@ -66,6 +66,7 @@ bankercrm/
 │   │   ├── account.py          # AccountCreate / AccountUpdate / AccountResponse
 │   │   ├── auth.py             # UserRegister / UserResponse / TokenResponse / RefreshRequest
 │   │   ├── common.py           # PaginatedResponse[T] — reusable generic
+│   │   ├── error_examples.py           
 │   │   └── errors.py           # ErrorResponse, FieldError — RFC 7807-inspired standard schema
 │   ├── services/
 │   │   ├── client_service.py   # CRUD + pagination
@@ -269,6 +270,7 @@ The refresh endpoint rotates the refresh token on every use — the previous tok
 | `GET /clients/{id}/accounts`  | ✅ | ✅ | ✅ |
 | `POST /accounts`              | ✅ | ✅ | ❌ |
 | `GET /accounts/{id}`          | ✅ | ✅ | ✅ |
+| `PATCH /accounts/{id}`        | ✅ | ❌ | ❌ |
 
 ### Example
 
@@ -449,6 +451,7 @@ Returns `200` with `"db": "connected"` when healthy, `503` with `"db": "unreacha
 |---|---|---|---|
 | `POST` | `/api/v1/accounts?client_id={id}` | admin, analyst | Create account for a client |
 | `GET` | `/api/v1/accounts/{id}` | any role | Get account by ID |
+| `PATCH` | `/api/v1/accounts/{id}` | admin | Update balance or status |
 
 ### Pagination
 
