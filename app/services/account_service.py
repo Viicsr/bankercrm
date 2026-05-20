@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import ConflictError, NotFoundError
 from app.models.account import Account
 from app.models.client import Client
-from app.schemas.account import AccountCreate
+from app.schemas.account import AccountCreate, AccountUpdate
 from app.services.client_service import ClientService
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ class AccountService:
     async def create_account(
         self, client_id: int, data: AccountCreate
     ) -> Account:  # funcion para crear una cuenta
-        await self.client_service.get_client(client_id)
+        await self._get_client_or_raise(client_id)
 
         existing = await self.db.execute(  # verificar si la cuenta ya existe
             select(Account).where(Account.account_number == data.account_number)
@@ -63,3 +63,12 @@ class AccountService:
         accounts = list(result.scalars().all())
         logger.info("Accounts found", extra={"client_id": client_id, "count": len(accounts)})
         return accounts
+
+    async def update_account(self, account_id: int, data: AccountUpdate) -> Account:
+        account = await self.get_account(account_id)
+        update_data = data.model_dump(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(account, field, value)
+        await self.db.commit()
+        await self.db.refresh(account)
+        return account

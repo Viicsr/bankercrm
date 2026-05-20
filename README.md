@@ -3,7 +3,20 @@
 [![CI Pipeline](https://github.com/Viicsr/bankercrm/actions/workflows/ci.yml/badge.svg)](https://github.com/Viicsr/bankercrm/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/Viicsr/bankercrm/branch/main/graph/badge.svg)](https://codecov.io/gh/Viicsr/bankercrm)
 
-REST API for banking CRM built with FastAPI, SQLAlchemy 2.0, and PostgreSQL.
+Production-grade REST API for banking customer and account management.
+Built with FastAPI async, JWT RBAC with three roles, structured JSON logging,
+CI/CD pipeline with ≥80% test coverage, and Docker multi-stage deployment.
+
+## Why this stack
+
+| Decision | Alternative considered | Reason |
+|---|---|---|
+| FastAPI async | Django REST Framework | I/O-bound workload — async connection pool handles more concurrency with fewer resources |
+| SQLAlchemy 2.0 async | Tortoise ORM | Ecosystem maturity, Alembic support, type-safe `Mapped[]` syntax |
+| PyJWT | python-jose | python-jose has unpatched CVEs since 2023 and is no longer maintained |
+| Domain exceptions | `HTTPException` in services | Services are transport-agnostic — reusable in Celery workers or WebSocket handlers |
+| Ruff | flake8 + black + isort | Single binary, 10-100x faster, same rules, single config file |
+| Bruno | Postman | File-based storage — collection lives in Git, no account required |
 
 ## Stack
 
@@ -19,37 +32,7 @@ REST API for banking CRM built with FastAPI, SQLAlchemy 2.0, and PostgreSQL.
 | Container | Docker multi-stage |
 
 ## Architecture
-
-```
-┌──────────────────────────────────────────────────┐
-│                   FastAPI App                    │
-│                                                  │
-│  ┌─────────────────────────────────────────────┐ │
-│  │              Middleware Stack               │ │
-│  │  CorrelationId · RequestLogging · Security  │ │
-│  └─────────────────────┬───────────────────────┘ │
-│                        │                         │
-│  ┌──────────┐  ┌───────▼──────┐                  │
-│  │  Router  │→ │   Service    │                  │
-│  │ (HTTP)   │  │ (Business)   │                  │
-│  └──────────┘  └──────┬───────┘                  │
-│                       │                          │
-│  ┌────────────────────▼──────────────────────┐   │
-│  │             Security Layer                │   │
-│  │      JWT decode · RBAC · bcrypt           │   │
-│  └────────────────────┬──────────────────────┘   │
-│                       │                          │
-│               ┌───────▼───────┐                  │
-│               │  SQLAlchemy   │                  │
-│               │    (ORM)      │                  │
-│               └───────┬───────┘                  │
-└───────────────────────┼──────────────────────────┘
-                        │
-                ┌───────▼───────┐
-                │  PostgreSQL   │
-                │   (Docker)    │
-                └───────────────┘
-```
+![Architecture](docs/architecture.png)
 
 Each layer has a single responsibility:
 - **Router** — receives HTTP, validates parameters, delegates to the service. No try/except or error logic
@@ -83,6 +66,7 @@ bankercrm/
 │   │   ├── account.py          # AccountCreate / AccountUpdate / AccountResponse
 │   │   ├── auth.py             # UserRegister / UserResponse / TokenResponse / RefreshRequest
 │   │   ├── common.py           # PaginatedResponse[T] — reusable generic
+│   │   ├── error_examples.py           
 │   │   └── errors.py           # ErrorResponse, FieldError — RFC 7807-inspired standard schema
 │   ├── services/
 │   │   ├── client_service.py   # CRUD + pagination
@@ -286,6 +270,7 @@ The refresh endpoint rotates the refresh token on every use — the previous tok
 | `GET /clients/{id}/accounts`  | ✅ | ✅ | ✅ |
 | `POST /accounts`              | ✅ | ✅ | ❌ |
 | `GET /accounts/{id}`          | ✅ | ✅ | ✅ |
+| `PATCH /accounts/{id}`        | ✅ | ❌ | ❌ |
 
 ### Example
 
@@ -466,6 +451,7 @@ Returns `200` with `"db": "connected"` when healthy, `503` with `"db": "unreacha
 |---|---|---|---|
 | `POST` | `/api/v1/accounts?client_id={id}` | admin, analyst | Create account for a client |
 | `GET` | `/api/v1/accounts/{id}` | any role | Get account by ID |
+| `PATCH` | `/api/v1/accounts/{id}` | admin | Update balance or status |
 
 ### Pagination
 
@@ -588,6 +574,13 @@ The `/health` endpoint uses `asyncio.wait_for` with a 5-second timeout to detect
 **Decision:** Development-specific configuration (hot reload via `--reload`, source code mounted as volume, port 5432 exposed to host for DBeaver/psql access) is isolated in `docker-compose.override.yml`, which Docker Compose loads automatically in local environments.  
 **Alternative considered:** A single `docker-compose.yml` with profiles or environment-based conditionals.  
 **Trade-off:** Two files instead of one, but each has a single clear responsibility. The override never reaches CI or production — both specify `-f docker-compose.yml` explicitly.
+
+### ADR-014: Flat resource routes over nested routes for accounts
+
+**Decision:** `POST /api/v1/accounts?client_id={id}` instead of `POST /api/v1/clients/{id}/accounts`.
+**Reason:** Accounts are a first-class resource, they have their own ID and are accessed directly via `GET /accounts/{id}`. Nesting them under clients would imply they only exist in that context, which is not true.
+**Trade-off:** The relationship between client and account is less obvious from the URL alone. Mitigated by Swagger documentation.
+
 
 ## Daily Startup
 

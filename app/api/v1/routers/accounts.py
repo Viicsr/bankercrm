@@ -4,23 +4,63 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.v1.deps import get_current_user, require_roles
 from app.core.database import get_db
 from app.models.user import User, UserRole
-from app.schemas.account import AccountCreate, AccountResponse
+from app.schemas.account import AccountCreate, AccountResponse, AccountUpdate
+from app.schemas.error_examples import (
+    ACCOUNT_404_CONTENT,
+    ACCOUNT_NUMBER_409_CONTENT,
+    AUTH_401_CONTENT,
+    AUTH_403_CONTENT,
+    CLIENT_FOR_ACCOUNT_404_CONTENT,
+)
 from app.schemas.errors import ErrorResponse
 from app.services.account_service import AccountService
 from app.services.client_service import ClientService
 
 router = APIRouter(prefix="/accounts", tags=["Accounts"])
 
+_auth_responses = {
+    401: {
+        "model": ErrorResponse,
+        "description": "Authentication required",
+        "content": AUTH_401_CONTENT,
+    },
+    403: {
+        "model": ErrorResponse,
+        "description": "Insufficient permissions",
+        "content": AUTH_403_CONTENT,
+    },
+}
+
 
 @router.post(
     "/",
     response_model=AccountResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Create account",
+    description="""
+Create a new bank account linked to an existing client.
+
+Supply the target `client_id` as a query parameter. The client must exist
+and be **active** — creating an account for a deactivated client returns **404**.
+
+The `account_number` must be unique across the entire system.
+If it already exists, the API returns **409 Conflict**.
+
+Requires `admin` or `analyst` role.
+    """,
     responses={
-        404: {"model": ErrorResponse, "description": "Client not found"},
-        409: {"model": ErrorResponse, "description": "Account already exists"},
-        401: {"model": ErrorResponse, "description": "Not authenticated"},
-        403: {"model": ErrorResponse, "description": "Insufficient permissions"},
+        201: {"description": "Account created successfully"},
+        404: {
+            "model": ErrorResponse,
+            "description": "Client not found or inactive",
+            "content": CLIENT_FOR_ACCOUNT_404_CONTENT,
+        },
+        409: {
+            "model": ErrorResponse,
+            "description": "Account number already exists",
+            "content": ACCOUNT_NUMBER_409_CONTENT,
+        },
+        **_auth_responses,
     },
 )
 async def create_account(
@@ -36,10 +76,25 @@ async def create_account(
 @router.get(
     "/{account_id}",
     response_model=AccountResponse,
+    summary="Get account by ID",
+    description="""
+Return the details of a specific bank account.
+
+Accessible by any authenticated user regardless of role.
+Returns **404** if the account does not exist.
+    """,
     responses={
-        404: {"model": ErrorResponse, "description": "Account not found"},
-        401: {"model": ErrorResponse, "description": "Not authenticated"},
-        403: {"model": ErrorResponse, "description": "Insufficient permissions"},
+        200: {"description": "Account found"},
+        404: {
+            "model": ErrorResponse,
+            "description": "Account not found",
+            "content": ACCOUNT_404_CONTENT,
+        },
+        401: {
+            "model": ErrorResponse,
+            "description": "Authentication required",
+            "content": AUTH_401_CONTENT,
+        },
     },
 )
 async def get_account(
@@ -49,3 +104,35 @@ async def get_account(
 ):
     service = AccountService(db=db, client_service=ClientService(db=db))
     return await service.get_account(account_id)
+
+
+@router.patch(
+    "/{account_id}",
+    response_model=AccountResponse,
+    summary="Update account",
+    description="""
+Update a bank account.
+
+Allows updating `is_active` and `balance` fields independently.
+Omitted fields are left unchanged.
+
+Requires `admin` or `analyst` role.
+    """,
+    responses={
+        200: {"description": "Account updated successfully"},
+        404: {
+            "model": ErrorResponse,
+            "description": "Account not found",
+            "content": ACCOUNT_404_CONTENT,
+        },
+        **_auth_responses,
+    },
+)
+async def update_account(
+    account_id: int,
+    update_data: AccountUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.ANALYST)),
+):
+    service = AccountService(db=db, client_service=ClientService(db=db))
+    return await service.update_account(account_id, update_data)

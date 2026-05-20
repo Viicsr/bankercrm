@@ -1,4 +1,4 @@
-.PHONY: help install up down logs shell migrate test lint format build clean
+.PHONY: help install up down logs shell migrate test lint format build clean export-openapi api-reference
 
 # Variables
 COMPOSE = docker compose
@@ -39,6 +39,18 @@ rebuild: ## Reconstruye la imagen sin cache
 	$(COMPOSE) build --no-cache
 	$(COMPOSE) up -d
 
+# === DOCUMENTACIÓN ===
+export-openapi: ## Export OpenAPI schema to docs/openapi.json
+	mkdir -p docs
+	python scripts/export_openapi.py
+
+docs-html: export-openapi ## Genera docs/api-reference.html desde el esquema OpenAPI
+	docker run --rm \
+		-v "$(CURDIR)/docs:/spec" \
+		redocly/cli build-docs /spec/openapi.json -o /spec/api-reference.html
+	@echo "$(GREEN) Referencia API generada en docs/api-reference.html$(NC)"
+	@open docs/api-reference.html 2>/dev/null || xdg-open docs/api-reference.html 2>/dev/null || true
+	
 # === BASE DE DATOS ===
 migrate: ## Aplica migraciones pendientes (local)
 	alembic upgrade head

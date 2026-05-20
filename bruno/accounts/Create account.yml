@@ -14,7 +14,7 @@ http:
     type: json
     data: |-
       {
-        "account_number": "123",
+        "account_number": "ES12-0049-0001",
         "account_type": "checking",
         "balance": 100
       }
