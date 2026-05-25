@@ -5,10 +5,12 @@ echo "Running database migrations..."
 alembic upgrade head
 echo "Migrations applied"
 
+PORT=${PORT:-8000}
+
 if [ "$APP_ENV" = "production" ]; then
-    echo "Starting FastAPI server (production mode)..."
-    exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
+    echo "Starting server (production) on port $PORT..."
+    exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --workers 2
 else
-    echo "Starting FastAPI server (development mode)..."
-    exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    echo "Starting server (development) on port $PORT..."
+    exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --reload
 fi
