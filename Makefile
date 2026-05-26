@@ -17,6 +17,11 @@ help: ## Muestra este mensaje de ayuda
 # === ENTORNO LOCAL ===
 install: ## Instala dependencias en el entorno virtual
 	pip install -r requirements.txt
+# === ENTORNO REMOTO ===
+deploy-check: ## Verifica que el deploy de producción responde
+	@echo "Checking production health..."
+	@curl -sf https://bankercrm-production.up.railway.app/health | python3 -m json.tool
+	@echo "Production is up"
 
 # === DOCKER ===
 up: ## Levanta la app + BD en Docker (desarrollo)
