@@ -5,7 +5,7 @@ info:
 
 http:
   method: GET
-  url: "{{base_url}}/clients/99999"
+  url: "{{base_url}}/{{version_url}}/clients/99999"
   auth:
     type: bearer
     token: "{{jwt_token}}"

@@ -5,11 +5,7 @@ info:
 
 http:
   method: PATCH
-  url: "{{base_url}}/accounts/{{account_id}}"
-  params:
-    - name: ""
-      value: ""
-      type: query
+  url: "{{base_url}}/{{version_url}}/accounts/{{account_id}}"
   body:
     type: json
     data: |-
@@ -22,7 +18,7 @@ http:
 runtime:
   variables:
     - name: account_id
-      value: "12345"
+      value: "1"
     - name: money
       value: "120.00"
     - name: isactive

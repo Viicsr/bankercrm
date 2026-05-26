@@ -5,7 +5,7 @@ info:
 
 http:
   method: POST
-  url: "{{base_url}}/accounts?client_id={{client_id}}"
+  url: "{{base_url}}/{{version_url}}/accounts?client_id={{client_id}}"
   params:
     - name: client_id
       value: "{{client_id}}"

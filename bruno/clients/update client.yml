@@ -5,7 +5,7 @@ info:
 
 http:
   method: PATCH
-  url: "{{base_url}}/clients/{{client_id}}"
+  url: "{{base_url}}/{{version_url}}/clients/{{client_id}}"
   body:
     type: json
     data: |-
