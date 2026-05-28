@@ -18,54 +18,70 @@ class ECBServiceError(AppBaseException):
     detail = "ECB API unavailable"
 
 
-def _parse_ecb_response(data: dict) -> dict[str, dict]:
+def _dimension_value_ids(dimensions: list[dict], dimension_id: str) -> list[str]:
+    for dimension in dimensions:
+        if dimension.get("id") == dimension_id:
+            return [value["id"] for value in dimension.get("values", [])]
+    return []
+
+
+def _parse_ecb_response(data: dict, requested_currencies: list[str]) -> dict[str, dict]:
     """
-    Parsea la respuesta SDMX-JSON del BCE.
-    Estructura: data.dataSets[0].series -> {key: {observations: {period: [value]}}}
-    """
+    Parsea la respuesta SDMX-JSON del BCE (format=jsondata).
+    Con detail=dataonly las observaciones usan índices; las fechas y monedas
+    se resuelven desde structure.dimensions.
+  """
     try:
-        datasets = data["data"]["dataSets"]
+        datasets = data.get("dataSets")
+        if datasets is None:
+            datasets = data.get("data", {}).get("dataSets", [])
         if not datasets:
             return {}
 
         series_data = datasets[0].get("series", {})
-        structure = data["data"]["structure"]
+        if not series_data:
+            return {}
 
-        # El BCE indexa las dimensiones — necesitamos el mapa de posiciones
-        dimensions = structure["dimensions"]["series"]
-        currency_dim = next(d for d in dimensions if d["id"] == "CURRENCY")
-        currency_values = {str(i): v["id"] for i, v in enumerate(currency_dim["values"])}
+        structure = data.get("structure", {})
+        dimensions = structure.get("dimensions", {})
+        currency_codes = _dimension_value_ids(dimensions.get("series", []), "CURRENCY")
+        time_periods = _dimension_value_ids(dimensions.get("observation", []), "TIME_PERIOD")
+        requested = set(requested_currencies)
 
         result = {}
         for series_key, series_value in series_data.items():
-            # La clave es "0:0:0:0:0" — el segundo elemento es la moneda
-            currency_idx = series_key.split(":")[1]
-            currency = currency_values.get(currency_idx)
-            if not currency:
+            currency_idx = int(series_key.split(":")[1])
+            if currency_idx >= len(currency_codes):
+                continue
+            currency = currency_codes[currency_idx]
+            if requested and currency not in requested:
                 continue
 
             observations = series_value.get("observations", {})
             if not observations:
                 continue
 
-            # La última observación es la más reciente
-            latest_period = max(observations.keys(), key=int)
-            value = observations[latest_period][0]
-
-            # Mapa de períodos para obtener la fecha
-            time_periods = structure["dimensions"]["observation"][0]["values"]
-            period_date = time_periods[int(latest_period)]["id"]
+            latest_period_key = max(observations.keys(), key=int)
+            value = observations[latest_period_key][0]
+            period_idx = int(latest_period_key)
+            rate_date = (
+                time_periods[period_idx]
+                if period_idx < len(time_periods)
+                else latest_period_key
+            )
 
             result[currency] = {
                 "rate": Decimal(str(value)).quantize(Decimal("0.0001")),
-                "date": period_date,
+                "date": rate_date,
                 "base": "EUR",
             }
 
         return result
 
-    except (KeyError, IndexError, StopIteration) as e:
-        logger.error("Failed to parse ECB response", extra={"error": str(e)})
+    except (KeyError, IndexError, ValueError) as e:
+        logger.error(
+            "Failed to parse ECB response", extra={"error": str(e), "type": type(e).__name__}
+        )
         return {}
 
 
@@ -97,6 +113,6 @@ async def fetch_fx_rates(currencies: list[str] | None = None) -> dict[str, dict]
         logger.error("ECB API connection error", extra={"error": str(e)})
         raise ECBServiceError("Cannot connect to ECB API") from e
 
-    rates = _parse_ecb_response(response.json())
+    rates = _parse_ecb_response(response.json(), target_currencies)
     logger.info("FX rates fetched", extra={"count": len(rates)})
     return rates
