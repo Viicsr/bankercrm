@@ -87,6 +87,9 @@ test-postgres: ## Ejecuta tests contra PostgreSQL real (levanta BD de tests)
 		pytest tests/ -v --cov=app --cov-report=term-missing
 	$(MAKE) test-db-down
 
+smoke: ## Run smoke tests against production
+	python scripts/smoke_test.py https://bankercrm-production.up.railway.app
+
 # === CALIDAD DE CÓDIGO ===
 lint: ## Ejecuta el linter ruff
 	ruff check .
