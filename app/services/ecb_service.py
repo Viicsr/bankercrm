@@ -30,7 +30,7 @@ def _parse_ecb_response(data: dict, requested_currencies: list[str]) -> dict[str
     Parsea la respuesta SDMX-JSON del BCE (format=jsondata).
     Con detail=dataonly las observaciones usan índices; las fechas y monedas
     se resuelven desde structure.dimensions.
-  """
+    """
     try:
         datasets = data.get("dataSets")
         if datasets is None:
@@ -65,9 +65,7 @@ def _parse_ecb_response(data: dict, requested_currencies: list[str]) -> dict[str
             value = observations[latest_period_key][0]
             period_idx = int(latest_period_key)
             rate_date = (
-                time_periods[period_idx]
-                if period_idx < len(time_periods)
-                else latest_period_key
+                time_periods[period_idx] if period_idx < len(time_periods) else latest_period_key
             )
 
             result[currency] = {
