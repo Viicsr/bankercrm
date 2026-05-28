@@ -1,8 +1,6 @@
 from decimal import Decimal
 from unittest.mock import AsyncMock, patch
 
-import pytest
-
 # Respuesta simulada del BCE
 MOCK_ECB_RATES = {
     "USD": {"rate": Decimal("1.0823"), "date": "2026-04-16", "base": "EUR"},
@@ -11,7 +9,6 @@ MOCK_ECB_RATES = {
 }
 
 
-@pytest.mark.anyio
 async def test_get_fx_rates(client, admin_headers):
     with patch(
         "app.api.v1.routers.fx.fetch_fx_rates",
@@ -28,7 +25,6 @@ async def test_get_fx_rates(client, admin_headers):
     assert currencies == sorted(currencies)
 
 
-@pytest.mark.anyio
 async def test_get_fx_rates_with_currency_filter(client, admin_headers):
     mock = AsyncMock(return_value=MOCK_ECB_RATES)
     with patch("app.api.v1.routers.fx.fetch_fx_rates", mock):
@@ -40,13 +36,11 @@ async def test_get_fx_rates_with_currency_filter(client, admin_headers):
     mock.assert_called_once_with(["USD", "GBP"])
 
 
-@pytest.mark.anyio
 async def test_get_fx_rates_requires_auth(client):
     response = await client.get("/api/v1/fx/rates")
     assert response.status_code == 401
 
 
-@pytest.mark.anyio
 async def test_convert_account_balance(client, admin_headers):
     client_res = await client.post(
         "/api/v1/clients/",  # trailing slash
@@ -84,7 +78,6 @@ async def test_convert_account_balance(client, admin_headers):
     assert abs(data["conversions"]["USD"]["amount"] - 1082.30) < 0.01
 
 
-@pytest.mark.anyio
 async def test_convert_nonexistent_account(client, admin_headers):
     with patch(
         "app.api.v1.routers.fx.fetch_fx_rates",
@@ -98,7 +91,6 @@ async def test_convert_nonexistent_account(client, admin_headers):
     assert response.status_code == 404
 
 
-@pytest.mark.anyio
 async def test_ecb_api_failure_returns_502(client, admin_headers):
     from app.services.ecb_service import ECBServiceError
 
