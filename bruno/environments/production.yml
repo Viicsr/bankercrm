@@ -1,0 +1,12 @@
+name: production
+variables:
+  - name: base_url
+    value: https://bankercrm-production.up.railway.app
+  - secret: true
+    name: jwt_token
+  - secret: true
+    name: refresh_token
+  - name: client_id
+    value: "1"
+  - name: version_url
+    value: api/v1

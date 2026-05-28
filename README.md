@@ -2,6 +2,9 @@
 
 [![CI Pipeline](https://github.com/Viicsr/bankercrm/actions/workflows/ci.yml/badge.svg)](https://github.com/Viicsr/bankercrm/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/Viicsr/bankercrm/branch/main/graph/badge.svg)](https://codecov.io/gh/Viicsr/bankercrm)
+[![Python](https://img.shields.io/badge/python-3.12-blue.svg)](https://python.org)
+[![Deploy](https://img.shields.io/badge/deploy-Railway-purple.svg)](https://bankercrm-production.up.railway.app)
+
 
 Production-grade REST API for banking customer and account management.
 Built with FastAPI async, JWT RBAC with three roles, structured JSON logging,
@@ -17,6 +20,7 @@ CI/CD pipeline with ≥80% test coverage, and Docker multi-stage deployment.
 | Domain exceptions | `HTTPException` in services | Services are transport-agnostic — reusable in Celery workers or WebSocket handlers |
 | Ruff | flake8 + black + isort | Single binary, 10-100x faster, same rules, single config file |
 | Bruno | Postman | File-based storage — collection lives in Git, no account required |
+| httpx async | requests (síncrono) | Consistency with the async stack; does not block the event loop while waiting for ECB API response |
 
 ## Stack
 
@@ -65,20 +69,23 @@ bankercrm/
 │   │   ├── client.py           # ClientCreate / ClientUpdate / ClientResponse / ClientWithAccountsResponse
 │   │   ├── account.py          # AccountCreate / AccountUpdate / AccountResponse
 │   │   ├── auth.py             # UserRegister / UserResponse / TokenResponse / RefreshRequest
+│   │   ├── fx.py               # FXRate / FXRatesResponse
 │   │   ├── common.py           # PaginatedResponse[T] — reusable generic
 │   │   ├── error_examples.py           
 │   │   └── errors.py           # ErrorResponse, FieldError — RFC 7807-inspired standard schema
 │   ├── services/
 │   │   ├── client_service.py   # CRUD + pagination
 │   │   ├── account_service.py  # CRUD + active client validation
-│   │   └── user_service.py     # Register, authenticate, lookup by email/id
+│   │   ├── user_service.py     # Register, authenticate, lookup by email/
+│   │   └── ecb_service.py      # ECB HTTP client + SDMX-JSON parser
 │   ├── api/
 │   │   └── v1/
 │   │       ├── deps.py         # get_current_user + require_roles (RBAC factory)
 │   │       └── routers/
 │   │           ├── clients.py  # Client endpoints (role-protected)
 │   │           ├── accounts.py # Account endpoints (role-protected)
-│   │           └── auth.py     # register / login / refresh
+│   │           ├── auth.py     # register / login / refresh
+│   │           └── fx.py       # FX rates + account balance conversion
 │   └── main.py                 # Entry point + lifespan + exception handlers + middleware stack
 ├── .github/
 │   └── workflows/
@@ -453,6 +460,15 @@ Returns `200` with `"db": "connected"` when healthy, `503` with `"db": "unreacha
 | `GET` | `/api/v1/accounts/{id}` | any role | Get account by ID |
 | `PATCH` | `/api/v1/accounts/{id}` | admin | Update balance or status |
 
+### Foreign Exchange (requires JWT)
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/v1/fx/rates` | any role | Real-time ECB exchange rates |
+| `GET` | `/api/v1/fx/accounts/{id}/convert` | any role | Account balance converted to target currencies |
+
+Exchange rates are sourced from the public [European Central Bank API](https://data.ecb.europa.eu), updated each business day at ~16:00 CET.
+
 ### Pagination
 
 The `GET /api/v1/clients` endpoint supports pagination:
@@ -581,6 +597,12 @@ The `/health` endpoint uses `asyncio.wait_for` with a 5-second timeout to detect
 **Reason:** Accounts are a first-class resource, they have their own ID and are accessed directly via `GET /accounts/{id}`. Nesting them under clients would imply they only exist in that context, which is not true.
 **Trade-off:** The relationship between client and account is less obvious from the URL alone. Mitigated by Swagger documentation.
 
+### ADR-015: httpx AsyncClient for external HTTP calls
+
+**Context:** The ECB API needs to be called from an async FastAPI endpoint.  
+**Decision:** `httpx.AsyncClient` instead of `requests`.  
+**Alternative considered:** `requests` (synchronous).  
+**Trade-off:** `requests` blocks the event loop thread during I/O wait — in an async FastAPI app with a single event loop thread, this means no other request can be processed while waiting for the ECB response. `httpx.AsyncClient` yields control to the event loop during the wait, consistent with the rest of the async stack.
 
 ## Daily Startup
 

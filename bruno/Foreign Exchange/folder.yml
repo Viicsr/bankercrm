@@ -1,0 +1,9 @@
+info:
+  name: Foreign Exchange
+  type: folder
+  seq: 4
+
+request:
+  auth:
+    type: bearer
+    token: "{{jwt_token}}"

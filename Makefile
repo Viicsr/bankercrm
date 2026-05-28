@@ -17,6 +17,11 @@ help: ## Muestra este mensaje de ayuda
 # === ENTORNO LOCAL ===
 install: ## Instala dependencias en el entorno virtual
 	pip install -r requirements.txt
+# === ENTORNO REMOTO ===
+deploy-check: ## Verifica que el deploy de producción responde
+	@echo "Checking production health..."
+	@curl -sf https://bankercrm-production.up.railway.app/health | python3 -m json.tool
+	@echo "Production is up"
 
 # === DOCKER ===
 up: ## Levanta la app + BD en Docker (desarrollo)
@@ -81,6 +86,9 @@ test-postgres: ## Ejecuta tests contra PostgreSQL real (levanta BD de tests)
 	DATABASE_URL=postgresql+asyncpg://vicsr:testpass@localhost:5433/bankercrm_test \
 		pytest tests/ -v --cov=app --cov-report=term-missing
 	$(MAKE) test-db-down
+
+smoke: ## Run smoke tests against production
+	python scripts/smoke_test.py https://bankercrm-production.up.railway.app
 
 # === CALIDAD DE CÓDIGO ===
 lint: ## Ejecuta el linter ruff

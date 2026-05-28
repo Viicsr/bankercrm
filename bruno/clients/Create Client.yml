@@ -5,7 +5,7 @@ info:
 
 http:
   method: POST
-  url: "{{base_url}}/clients"
+  url: "{{base_url}}/{{version_url}}/clients"
   body:
     type: json
     data: '{"name": "Victor", "email": "victor@test.com"}'

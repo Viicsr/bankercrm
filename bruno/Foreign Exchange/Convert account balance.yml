@@ -1,0 +1,27 @@
+info:
+  name: Convert account balance
+  type: http
+  seq: 2
+
+http:
+  method: GET
+  url: "{{base_url}}/{{version_url}}/fx/accounts/{{account_id}}/convert?currencies=USD&currencies=JPY"
+  params:
+    - name: currencies
+      value: USD
+      type: query
+    - name: currencies
+      value: JPY
+      type: query
+  auth: inherit
+
+runtime:
+  variables:
+    - name: account_id
+      value: "1"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
