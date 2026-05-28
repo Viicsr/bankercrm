@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
-from app.api.v1.routers import accounts, auth, clients
+from app.api.v1.routers import accounts, auth, clients, fx
 from app.core.config import settings
 from app.core.database import engine
 from app.core.error_handlers import (
@@ -54,6 +54,10 @@ openapi_tags = [
     {
         "name": "Accounts",
         "description": "Bank account management endpoints linked to clients.",
+    },
+    {
+        "name": "Foreign Exchange",
+        "description": "Real-time foreign exchange rates from the European Central Bank (ECB) and account balance conversion.",
     },
     {
         "name": "System",
@@ -187,6 +191,7 @@ async def health_check():
 app.include_router(clients.router, prefix="/api/v1")
 app.include_router(accounts.router, prefix="/api/v1")
 app.include_router(auth.router, prefix="/api/v1")
+app.include_router(fx.router, prefix="/api/v1")
 
 # Agrega los manejadores de excepciones
 app.add_exception_handler(AppBaseException, app_exception_handler)

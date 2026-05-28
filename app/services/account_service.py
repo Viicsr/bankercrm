@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class AccountService:
-    def __init__(self, db: AsyncSession, client_service: ClientService):
+    def __init__(self, db: AsyncSession, client_service: ClientService | None = None):
         self.db = db
         self.client_service = client_service
 
