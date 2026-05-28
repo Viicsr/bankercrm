@@ -121,7 +121,7 @@ The same ID appears in the `request_id` field of any error body.
 Use it to cross-reference logs when reporting issues.
 """,
     docs_url="/docs" if settings.APP_ENV != "production" else None,
-    redoc_url="/redoc" if settings.APP_ENV != "production" else None,
+    redoc_url="/api/docs",
     openapi_tags=openapi_tags,
     contact={
         "name": "Victor Santos",
