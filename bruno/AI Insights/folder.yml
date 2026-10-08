@@ -1,0 +1,9 @@
+info:
+  name: AI Insights
+  type: folder
+  seq: 5
+
+request:
+  auth:
+    type: bearer
+    token: "{{jwt_token}}"

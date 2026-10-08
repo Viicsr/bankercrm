@@ -1011,6 +1011,272 @@
           }
         }
       }
+    },
+    "/api/v1/fx/rates": {
+      "get": {
+        "tags": [
+          "Foreign Exchange"
+        ],
+        "summary": "Current foreign exchange rates (ECB)",
+        "description": "Returns the daily reference exchange rates published by the\nEuropean Central Bank. All rates are quoted against EUR (base currency).\n\nData is fetched in real time from the ECB public API:\n`data-api.ecb.europa.eu`\n\nUpdated once per business day at approximately 16:00 CET.",
+        "operationId": "get_fx_rates_api_v1_fx_rates_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "currencies",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Currency codes to query. Available: USD, GBP, JPY, CHF, CNY, CAD, AUD, SEK, NOK",
+              "examples": [
+                "USD",
+                "GBP"
+              ],
+              "title": "Currencies"
+            },
+            "description": "Currency codes to query. Available: USD, GBP, JPY, CHF, CNY, CAD, AUD, SEK, NOK"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FXRatesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fx/accounts/{account_id}/convert": {
+      "get": {
+        "tags": [
+          "Foreign Exchange"
+        ],
+        "summary": "Convert account balance to other currencies",
+        "description": "Retrieves the balance of a specific bank account and converts it\nto the selected currencies using live ECB exchange rates.\n\nCombines internal CRM data (account balance) with real-time\nexternal data (ECB exchange rates).",
+        "operationId": "convert_account_balance_api_v1_fx_accounts__account_id__convert_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Account Id"
+            }
+          },
+          {
+            "name": "currencies",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Target currency codes for conversion",
+              "default": [
+                "USD",
+                "GBP",
+                "JPY"
+              ],
+              "title": "Currencies"
+            },
+            "description": "Target currency codes for conversion"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Balance converted successfully",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "account_id": 1,
+                  "account_number": "ES1234567890",
+                  "balance_eur": 1000.0,
+                  "conversions": {
+                    "GBP": {
+                      "amount": 852.1,
+                      "rate": 0.8521,
+                      "rate_date": "2026-05-28"
+                    },
+                    "JPY": {
+                      "amount": 163450.0,
+                      "rate": 163.45,
+                      "rate_date": "2026-05-28"
+                    },
+                    "USD": {
+                      "amount": 1082.3,
+                      "rate": 1.0823,
+                      "rate_date": "2026-05-28"
+                    }
+                  },
+                  "source": "European Central Bank"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Account not found"
+          },
+          "502": {
+            "description": "ECB API unavailable"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/clients/{client_id}/insights": {
+      "post": {
+        "tags": [
+          "AI Insights"
+        ],
+        "summary": "Generate client insight",
+        "description": "Ask an internal LLM analyst about a client using **only** CRM data\n(name, status, and accounts). The model must not invent balances,\nproducts, or personal details.\n\nRequires `admin` or `analyst` role. Calls OpenAI (`OPENAI_API_KEY`).",
+        "operationId": "get_client_insight_api_v1_ai_clients__client_id__insights_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Client Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InsightRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Structured insight generated from CRM data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientInsightResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Client not found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "NotFoundError",
+                  "detail": "Client '42' not found.",
+                  "path": "/api/v1/clients/42",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error — empty or too long question"
+          },
+          "502": {
+            "description": "AI provider unavailable or not configured",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "AIServiceError",
+                  "detail": "AI provider unavailable",
+                  "path": "/api/v1/ai/clients/1/insights",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "AuthenticationError",
+                  "detail": "Authentication credentials were not provided or are invalid.",
+                  "path": "/api/v1/...",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "AuthorizationError",
+                  "detail": "Role 'read_only' is not allowed to perform this action.",
+                  "path": "/api/v1/...",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1261,6 +1527,70 @@
         ],
         "title": "ClientCreate"
       },
+      "ClientInsight": {
+        "properties": {
+          "summary": {
+            "type": "string",
+            "title": "Summary",
+            "description": "One-sentence summary of the client."
+          },
+          "risk_profile": {
+            "type": "string",
+            "title": "Risk Profile",
+            "description": "Risk profile: low, medium, high, or unknown."
+          },
+          "key_observation": {
+            "type": "string",
+            "title": "Key Observation",
+            "description": "Main observation based only on the provided data."
+          },
+          "recommended_action": {
+            "type": "string",
+            "title": "Recommended Action",
+            "description": "Recommended action for the relationship manager."
+          }
+        },
+        "type": "object",
+        "required": [
+          "summary",
+          "risk_profile",
+          "key_observation",
+          "recommended_action"
+        ],
+        "title": "ClientInsight"
+      },
+      "ClientInsightResponse": {
+        "properties": {
+          "client_id": {
+            "type": "integer",
+            "title": "Client Id"
+          },
+          "question": {
+            "type": "string",
+            "title": "Question"
+          },
+          "insight": {
+            "$ref": "#/components/schemas/ClientInsight"
+          }
+        },
+        "type": "object",
+        "required": [
+          "client_id",
+          "question",
+          "insight"
+        ],
+        "title": "ClientInsightResponse",
+        "example": {
+          "client_id": 1,
+          "insight": {
+            "key_observation": "A single active savings account with a moderate balance.",
+            "recommended_action": "Review product fit on the next scheduled contact.",
+            "risk_profile": "low",
+            "summary": "Active client with a savings account of 1,000 EUR."
+          },
+          "question": "What risk profile does this client have based on their accounts?"
+        }
+      },
       "ClientResponse": {
         "properties": {
           "id": {
@@ -1510,6 +1840,91 @@
         ],
         "title": "ErrorResponse"
       },
+      "FXRate": {
+        "properties": {
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "rate": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Rate"
+          },
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "base": {
+            "type": "string",
+            "title": "Base",
+            "default": "EUR"
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "rate",
+          "date"
+        ],
+        "title": "FXRate",
+        "example": {
+          "base": "EUR",
+          "currency": "USD",
+          "date": "2026-05-28",
+          "rate": "1.0823"
+        }
+      },
+      "FXRatesResponse": {
+        "properties": {
+          "rates": {
+            "items": {
+              "$ref": "#/components/schemas/FXRate"
+            },
+            "type": "array",
+            "title": "Rates"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "default": "European Central Bank"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": "Daily foreign exchange reference rates against EUR"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rates"
+        ],
+        "title": "FXRatesResponse",
+        "example": {
+          "description": "Daily foreign exchange reference rates against EUR",
+          "rates": [
+            {
+              "base": "EUR",
+              "currency": "GBP",
+              "date": "2026-05-28",
+              "rate": "0.8521"
+            },
+            {
+              "base": "EUR",
+              "currency": "JPY",
+              "date": "2026-05-28",
+              "rate": "163.45"
+            },
+            {
+              "base": "EUR",
+              "currency": "USD",
+              "date": "2026-05-28",
+              "rate": "1.0823"
+            }
+          ],
+          "source": "European Central Bank"
+        }
+      },
       "FieldError": {
         "properties": {
           "field": {
@@ -1592,6 +2007,25 @@
           "dependencies"
         ],
         "title": "HealthResponse"
+      },
+      "InsightRequest": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Question",
+            "description": "Question from the relationship manager about this client.",
+            "examples": [
+              "What risk profile does this client have based on their accounts?"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "question"
+        ],
+        "title": "InsightRequest"
       },
       "PaginatedResponse_ClientResponse_": {
         "properties": {
@@ -1844,6 +2278,14 @@
     {
       "name": "Accounts",
       "description": "Bank account management endpoints linked to clients."
+    },
+    {
+      "name": "Foreign Exchange",
+      "description": "Real-time foreign exchange rates from the European Central Bank (ECB) and account balance conversion."
+    },
+    {
+      "name": "AI Insights",
+      "description": "LLM-assisted client analysis based only on CRM data. Requires admin or analyst role and a configured OPENAI_API_KEY."
     },
     {
       "name": "System",

@@ -70,6 +70,7 @@ bankercrm/
 │   │   ├── account.py          # AccountCreate / AccountUpdate / AccountResponse
 │   │   ├── auth.py             # UserRegister / UserResponse / TokenResponse / RefreshRequest
 │   │   ├── fx.py               # FXRate / FXRatesResponse
+│   │   ├── ai_insights.py      # InsightRequest / ClientInsight / ClientInsightResponse
 │   │   ├── common.py           # PaginatedResponse[T] — reusable generic
 │   │   ├── error_examples.py           
 │   │   └── errors.py           # ErrorResponse, FieldError — RFC 7807-inspired standard schema
@@ -77,7 +78,8 @@ bankercrm/
 │   │   ├── client_service.py   # CRUD + pagination
 │   │   ├── account_service.py  # CRUD + active client validation
 │   │   ├── user_service.py     # Register, authenticate, lookup by email/
-│   │   └── ecb_service.py      # ECB HTTP client + SDMX-JSON parser
+│   │   ├── ecb_service.py      # ECB HTTP client + SDMX-JSON parser
+│   │   └── ai_insight_service.py  # Client insight via LangChain structured output
 │   ├── api/
 │   │   └── v1/
 │   │       ├── deps.py         # get_current_user + require_roles (RBAC factory)
@@ -85,7 +87,8 @@ bankercrm/
 │   │           ├── clients.py  # Client endpoints (role-protected)
 │   │           ├── accounts.py # Account endpoints (role-protected)
 │   │           ├── auth.py     # register / login / refresh
-│   │           └── fx.py       # FX rates + account balance conversion
+│   │           ├── fx.py       # FX rates + account balance conversion
+│   │           └── ai_insights.py  # LLM client insights (role-protected)
 │   └── main.py                 # Entry point + lifespan + exception handlers + middleware stack
 ├── .github/
 │   └── workflows/
@@ -112,6 +115,7 @@ bankercrm/
 │   ├── test_acounts.py
 │   ├── test_auth.py
 │   ├── test_client.py
+│   ├── test_ai_insights.py     # LLM insights with mocked provider
 │   ├── test_errors.py          # Standard error format (404, 409, 422, 401, 403)
 │   ├── test_middleware.py      # Request ID, process time, security headers
 │   └── test_services.py        # Unit tests with mocked DB session
@@ -235,6 +239,8 @@ Interactive docs: `http://localhost:8000/docs`
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Access token TTL | `30` | ❌ |
 | `REFRESH_TOKEN_EXPIRE_DAYS` | Refresh token TTL | `7` | ❌ |
 | `ALLOWED_ORIGINS` | Comma-separated list of allowed CORS origins | `http://localhost:3000,http://localhost:5173` | ✅ prod|
+| `OPENAI_API_KEY` | OpenAI key for `POST /api/v1/ai/clients/{id}/insights` | `sk-...` | ✅ for AI |
+| `OPENAI_MODEL` | Chat model used for insights | `gpt-4o-mini` | ❌ |
 
 ## Authentication
 
@@ -468,6 +474,14 @@ Returns `200` with `"db": "connected"` when healthy, `503` with `"db": "unreacha
 | `GET` | `/api/v1/fx/accounts/{id}/convert` | any role | Account balance converted to target currencies |
 
 Exchange rates are sourced from the public [European Central Bank API](https://data.ecb.europa.eu), updated each business day at ~16:00 CET.
+
+### AI Insights (requires JWT)
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `POST` | `/api/v1/ai/clients/{id}/insights` | admin, analyst | Structured LLM insight from CRM client + account data |
+
+The model is instructed to use only CRM fields (name, status, accounts). Missing `OPENAI_API_KEY` or provider errors return **502**.
 
 ### Pagination
 
