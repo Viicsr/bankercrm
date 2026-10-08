@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
-from app.api.v1.routers import accounts, auth, clients, fx
+from app.api.v1.routers import accounts, ai_insights, auth, clients, fx
 from app.core.config import settings
 from app.core.database import engine
 from app.core.error_handlers import (
@@ -58,6 +58,13 @@ openapi_tags = [
     {
         "name": "Foreign Exchange",
         "description": "Real-time foreign exchange rates from the European Central Bank (ECB) and account balance conversion.",
+    },
+    {
+        "name": "AI Insights",
+        "description": (
+            "LLM-assisted client analysis based only on CRM data. "
+            "Requires admin or analyst role and a configured OPENAI_API_KEY."
+        ),
     },
     {
         "name": "System",
@@ -192,6 +199,7 @@ app.include_router(clients.router, prefix="/api/v1")
 app.include_router(accounts.router, prefix="/api/v1")
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(fx.router, prefix="/api/v1")
+app.include_router(ai_insights.router, prefix="/api/v1")
 
 # Agrega los manejadores de excepciones
 app.add_exception_handler(AppBaseException, app_exception_handler)

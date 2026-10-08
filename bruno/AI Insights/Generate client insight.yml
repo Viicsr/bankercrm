@@ -1,0 +1,20 @@
+info:
+  name: Generate client insight
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{base_url}}/{{version_url}}/ai/clients/1/insights"
+  body:
+    type: json
+    data: '{"question": "What risk profile does this client have based on their accounts?"}'
+  auth:
+    type: bearer
+    token: "{{jwt_token}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
